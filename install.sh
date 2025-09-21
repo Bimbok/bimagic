@@ -4,7 +4,7 @@
 set -e
 
 # GitHub repository URL (replace with your actual repo URL)
-REPO_URL="https://github.com/your_username/bimagic.git"
+REPO_URL="https://github.com/Bimbok/bimagic.git"
 
 # Check for required tools
 if ! command -v git &> /dev/null; then
