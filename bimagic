@@ -1,0 +1,105 @@
+#!/bin/bash
+
+GITHUB_USER="$1"
+GITHUB_TOKEN="$2"
+
+echo "Welcome to the Git Wizard! Let's work some magic..."
+echo
+
+while true; do
+    echo "Choose your spell:"
+    echo "1) Init new repo"
+    echo "2) Add files"
+    echo "3) Commit changes"
+    echo "4) Push to remote"
+    echo "5) Pull latest changes"
+    echo "6) Create/switch branch"
+    echo "7) Set remote (via token)"
+    echo "8) Show status"
+    echo "9) Exit"
+    read -p "Enter choice: " -r choice
+    echo
+
+    case $choice in
+        1)
+            read -p "Enter repo directory name (or '.' for current dir): " -r dirname
+            if [[ "$dirname" == "." ]]; then
+                git init
+                echo "Repo initialized in current directory: $(pwd)"
+            else
+                mkdir -p "$dirname" && cd "$dirname" || exit
+                git init
+                echo "Repo initialized in new directory: $dirname"
+                cd - > /dev/null 2>&1 || exit
+            fi
+
+            current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+            if [[ "$current_branch" == "master" ]]; then
+                git branch -M main
+                echo "Default branch renamed from 'master' to 'main'"
+            fi
+            ;;
+        2)
+            read -p "Enter files to add (or '.' for all): " -r files
+            git add "$files"
+            echo "Files staged: $files"
+            ;;
+        3)
+            read -p "Enter commit message: " -r msg
+            git commit -m "$msg"
+            echo "Commit done!"
+            ;;
+        4)
+            branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+            branch=${branch:-main}
+
+            remote=$(git remote 2>/dev/null)
+            if [[ -z "$remote" ]]; then
+                echo "No remote set!"
+                read -p "Enter repo name (example: my-repo.git): " -r reponame
+                remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
+                git remote add origin "$remote_url"
+                echo "🔗 Remote 'origin' set to $remote_url"
+                remote="origin"
+            fi
+
+            echo "Pushing branch '$branch' to '$remote'..."
+            git push -u "$remote" "$branch"
+            ;;
+        5)
+            read -p "Enter branch to pull (default main): " -r branch
+            branch=${branch:-main}
+            
+            remote=$(git remote 2>/dev/null)
+            if [[ -z "$remote" ]]; then
+                echo "No remote set! Cannot pull."
+            else
+                git pull "$remote" "$branch"
+            fi
+            ;;
+        6)
+            read -p "Enter branch name: " -r branch
+            git checkout -b "$branch" 2>/dev/null || git checkout "$branch"
+            echo "Now on branch $branch"
+            ;;
+        7)
+            read -p "Enter repo name (example: my-repo.git): " -r reponame
+            remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
+            git remote remove origin 2>/dev/null
+            git remote add origin "$remote_url"
+            echo "Remote 'origin' set to $remote_url"
+            ;;
+        8)
+            git status
+            ;;
+        9)
+            echo "Git Wizard vanishes in a puff of smoke..."
+            exit 0
+            ;;
+        *)
+            echo "Invalid choice! Try again."
+            ;;
+    esac
+
+    echo
+done
