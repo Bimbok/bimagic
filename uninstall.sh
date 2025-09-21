@@ -22,7 +22,7 @@ if [[ ${#FOUND_INSTALLS[@]} -eq 0 ]]; then
 fi
 
 # Confirm uninstallation
-read -p "Are you sure you want to uninstall Bimagic? (y/N): " -r confirm
+read -p "Are you sure you want to uninstall Bimagic? (y/N): " -r confirm < /dev/tty
 if [[ ! $confirm =~ ^[Yy]$ ]]; then
     echo "Uninstallation cancelled."
     exit 0
@@ -50,7 +50,7 @@ for dir in "${FOUND_INSTALLS[@]}"; do
 done
 
 # Optional: Remove environment variables from shell config
-read -p "Do you want to remove GITHUB_USER and GITHUB_TOKEN from your shell config? (y/N): " -r remove_vars
+read -p "Do you want to remove GITHUB_USER and GITHUB_TOKEN from your shell config? (y/N): " -r remove_vars < /dev/tty
 if [[ $remove_vars =~ ^[Yy]$ ]]; then
     SHELL_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
     
