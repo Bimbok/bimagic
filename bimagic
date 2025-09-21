@@ -1,10 +1,24 @@
 #!/bin/bash
 
-GITHUB_USER="$1"
-GITHUB_TOKEN="$2"
-
 echo "Welcome to the Git Wizard! Let's work some magic..."
 echo
+
+# Check if environment variables are set
+if [[ -z "$GITHUB_USER" ]]; then
+    echo "⚠️  GITHUB_USER environment variable is not set!"
+    echo "Please add this to your ~/.bashrc or ~/.zshrc:"
+    echo "  export GITHUB_USER=\"your_github_username\""
+    exit 1
+fi
+
+if [[ -z "$GITHUB_TOKEN" ]]; then
+    echo "⚠️  GITHUB_TOKEN environment variable is not set!"
+    echo "Please add this to your ~/.bashrc or ~/.zshrc:"
+    echo "  export GITHUB_TOKEN=\"your_github_token\""
+    exit 1
+fi
+
+echo "Using GitHub user: $GITHUB_USER"
 
 while true; do
     echo "Choose your spell:"
