@@ -3,7 +3,7 @@
 # Exit on error
 set -e
 
-# GitHub repository URL (replace with your actual repo URL)
+# GitHub repository URL
 REPO_URL="https://github.com/Bimbok/bimagic.git"
 
 # Check for required tools
@@ -18,24 +18,39 @@ TEMP_DIR=$(mktemp -d)
 git clone "$REPO_URL" "$TEMP_DIR"
 
 # Determine the target directory (prioritize ~/bin if it exists, else /usr/local/bin)
-if [ -d "$HOME/bin" ]; then
+if [ -d "$HOME/bin" ] && [ -w "$HOME/bin" ]; then
     TARGET_DIR="$HOME/bin"
+    USE_SUDO=false
 else
     TARGET_DIR="/usr/local/bin"
+    USE_SUDO=true
 fi
 
-# Ensure the target directory exists and is in PATH
-mkdir -p "$TARGET_DIR"
-if [[ ":$PATH:" != *":$TARGET_DIR:"* ]]; then
-    echo "Note: $TARGET_DIR is not in your PATH. Add it to your shell profile (e.g., ~/.bashrc or ~/.zshrc)."
+# Ensure the target directory exists
+if [ "$USE_SUDO" = true ]; then
+    sudo mkdir -p "$TARGET_DIR"
+else
+    mkdir -p "$TARGET_DIR"
 fi
 
 # Copy the script and make it executable
-cp "$TEMP_DIR/bimagic" "$TARGET_DIR/"
-chmod +x "$TARGET_DIR/bimagic"
+if [ "$USE_SUDO" = true ]; then
+    sudo cp "$TEMP_DIR/bimagic" "$TARGET_DIR/"
+    sudo chmod +x "$TARGET_DIR/bimagic"
+else
+    cp "$TEMP_DIR/bimagic" "$TARGET_DIR/"
+    chmod +x "$TARGET_DIR/bimagic"
+fi
 
 # Clean up
 rm -rf "$TEMP_DIR"
 
 echo "Successfully installed bimagic to $TARGET_DIR!"
 echo "Please ensure GITHUB_USER and GITHUB_TOKEN are set as environment variables."
+
+# Check if target directory is in PATH
+if [[ ":$PATH:" != *":$TARGET_DIR:"* ]]; then
+    echo "Note: $TARGET_DIR is not in your PATH. Add it to your shell profile:"
+    echo "  echo 'export PATH=\"\$PATH:$TARGET_DIR\"' >> ~/.bashrc"
+    echo "  source ~/.bashrc"
+fi
