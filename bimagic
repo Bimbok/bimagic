@@ -30,7 +30,8 @@ while true; do
     echo "6) Create/switch branch"
     echo "7) Set remote (via token)"
     echo "8) Show status"
-    echo "9) Exit"
+    echo "9) Remove files/folders (rm)"
+    echo "10) Exit"
     read -p "Enter choice: " -r choice
     echo
 
@@ -107,6 +108,48 @@ while true; do
             git status
             ;;
         9)
+            read -p "Enter files/folders to remove (supports wildcards like *): " -r files
+            if [[ -z "$files" ]]; then
+                echo "No files specified!"
+                continue
+            fi
+            
+            # Safety check for dangerous patterns
+            if [[ "$files" == "*" ]]; then
+                echo "⚠️  WARNING: You're about to remove ALL files in the current directory!"
+                read -p "Are you sure? Type 'yes' to confirm: " -r confirm
+                if [[ "$confirm" != "yes" ]]; then
+                    echo "Operation cancelled."
+                    continue
+                fi
+            fi
+            
+            # Check if files exist before removing
+            if ls "$files" >/dev/null 2>&1; then
+                echo "Files/folders to be removed:"
+                ls -la "$files"
+                echo
+                read -p "Confirm removal? (y/N): " -r confirm
+                if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                    # Check if we're in a git repository
+                    if git rev-parse --git-dir > /dev/null 2>&1; then
+                        echo "🗑️  Removing from git tracking and filesystem..."
+                        # Use git rm for tracked files, regular rm for untracked
+                        git rm -rf "$files" 2>/dev/null || rm -rf "$files"
+                        echo "Files/folders removed from git and filesystem: $files"
+                    else
+                        echo "🗑️  Removing from filesystem (not a git repo)..."
+                        rm -rf "$files"
+                        echo "Files/folders removed from filesystem: $files"
+                    fi
+                else
+                    echo "Operation cancelled."
+                fi
+            else
+                echo "❌ No files/folders found matching: $files"
+            fi
+            ;;
+        10)
             echo "Git Wizard vanishes in a puff of smoke..."
             exit 0
             ;;

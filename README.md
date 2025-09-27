@@ -15,6 +15,7 @@ Bimagic is an interactive command-line tool that streamlines common Git operatio
 - 🌿 Branch management made easy
 - 📊 Status overview at a glance
 - 🛡️ Automatic master-to-main branch renaming
+- 🗑️ Safe file/folder removal with git integration
 
 ## Installation
 
@@ -109,7 +110,46 @@ You'll be presented with an interactive menu where you can choose from various G
 6. **Create/switch branch** - Create a new branch or switch to an existing one
 7. **Set remote** - Manually set the remote repository URL
 8. **Show status** - Display the current repository status
-9. **Exit** - Quit the wizard
+9. **Remove files/folders (rm)** - Safely remove files and folders with git integration
+10. **Exit** - Quit the wizard
+
+### File Removal (Option 9)
+
+The `rm` option provides a safe way to remove files and folders with full git integration:
+
+#### Features:
+- **Wildcard Support**: Use `*` to remove everything, or specific patterns like `*.txt`, `temp*`, etc.
+- **Git Integration**: Automatically removes files from both git tracking and filesystem
+- **Safety Checks**: Multiple confirmation prompts to prevent accidental deletions
+- **Smart Detection**: Automatically detects if you're in a git repository
+
+#### Usage Examples:
+```bash
+# Remove all files (with extra confirmation)
+*
+
+# Remove all text files
+*.txt
+
+# Remove files starting with 'temp'
+temp*
+
+# Remove specific files
+file1.txt folder1/
+```
+
+#### Safety Features:
+- **Double confirmation** for `*` (everything) - requires typing "yes"
+- **Preview** of what will be deleted before proceeding
+- **Existence check** - only proceeds if files actually exist
+- **Git-aware** - uses `git rm` for tracked files, regular `rm` for untracked files
+
+#### How it works:
+1. Enter the file pattern you want to remove
+2. The tool shows you exactly what will be deleted
+3. Confirm the deletion (y/N)
+4. Files are removed from both git tracking and filesystem (if in a git repo)
+5. Clear feedback about what was removed
 
 ## Why Sudo Might Be Required
 
