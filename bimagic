@@ -21,22 +21,38 @@ fi
 echo "Using GitHub user: $GITHUB_USER"
 
 while true; do
-    echo "Choose your spell:"
-    echo "1) Init new repo"
-    echo "2) Add files"
-    echo "3) Commit changes"
-    echo "4) Push to remote"
-    echo "5) Pull latest changes"
-    echo "6) Create/switch branch"
-    echo "7) Set remote (via token)"
-    echo "8) Show status"
-    echo "9) Remove files/folders (rm)"
-    echo "10) Exit"
-    read -p "Enter choice: " -r choice
+    # echo "Choose your spell:"
+    # echo "1) Init new repo"
+    # echo "2) Add files"
+    # echo "3) Commit changes"
+    # echo "4) Push to remote"
+    # echo "5) Pull latest changes"
+    # echo "6) Create/switch branch"
+    # echo "7) Set remote (via token)"
+    # echo "8) Show status"
+    # echo "9) Remove files/folders (rm)"
+    # echo "10) Exit"
+    # read -p "Enter choice: " -r choice
+    # echo
+
+    # fzf menu
+    choice=$(printf "%s\n" \
+        "1) Init new repo" \
+        "2) Add files" \
+        "3) Commit changes" \
+        "4) Push to remote" \
+        "5) Pull latest changes" \
+        "6) Create/switch branch" \
+        "7) Set remote (via token)" \
+        "8) Show status" \
+        "9) Remove files/folders (rm)" \
+        "10) Exit" \
+        | fzf --prompt="Choose your spell: " --height=14 --border --ansi)
+
     echo
 
-    case $choice in
-        1)
+    case "$choice" in
+        "1) Init new repo")
             read -p "Enter repo directory name (or '.' for current dir): " -r dirname
             if [[ "$dirname" == "." ]]; then
                 git init
@@ -54,17 +70,17 @@ while true; do
                 echo "Default branch renamed from 'master' to 'main'"
             fi
             ;;
-        2)
+        "2) Add files")
             read -p "Enter files to add (or '.' for all): " -r files
             git add "$files"
             echo "Files staged: $files"
             ;;
-        3)
+        "3) Commit changes")
             read -p "Enter commit message: " -r msg
             git commit -m "$msg"
             echo "Commit done!"
             ;;
-        4)
+        "4) Push to remote")
             branch=$(git symbolic-ref --short HEAD 2>/dev/null)
             branch=${branch:-main}
 
@@ -81,7 +97,7 @@ while true; do
             echo "Pushing branch '$branch' to '$remote'..."
             git push -u "$remote" "$branch"
             ;;
-        5)
+        "5) Pull latest changes")
             read -p "Enter branch to pull (default main): " -r branch
             branch=${branch:-main}
             
@@ -92,22 +108,22 @@ while true; do
                 git pull "$remote" "$branch"
             fi
             ;;
-        6)
+        "6) Create/switch branch")
             read -p "Enter branch name: " -r branch
             git checkout -b "$branch" 2>/dev/null || git checkout "$branch"
             echo "Now on branch $branch"
             ;;
-        7)
+        "7) Set remote (via token)")
             read -p "Enter repo name (example: my-repo.git): " -r reponame
             remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
             git remote remove origin 2>/dev/null
             git remote add origin "$remote_url"
             echo "Remote 'origin' set to $remote_url"
             ;;
-        8)
+        "8) Show status")
             git status
             ;;
-        9)
+        "9) Remove files/folders (rm)")
             read -p "Enter files/folders to remove (supports wildcards like *): " -r files
             if [[ -z "$files" ]]; then
                 echo "No files specified!"
@@ -149,7 +165,7 @@ while true; do
                 echo "❌ No files/folders found matching: $files"
             fi
             ;;
-        10)
+        "10) Exit")
             echo "Git Wizard vanishes in a puff of smoke..."
             exit 0
             ;;
