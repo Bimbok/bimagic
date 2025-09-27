@@ -1,6 +1,6 @@
 # Bimagic - Git Wizard 🧙‍♂️
 
-by Bimbok and adityapaul26
+By Bimbok and adityapaul26
 
 A powerful Bash-based Git automation tool that simplifies your GitHub workflow with an interactive menu system.
 
