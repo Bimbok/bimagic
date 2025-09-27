@@ -1,6 +1,6 @@
 # Bimagic - Git Wizard 🧙‍♂️
 
-A powerful Bash-based Git automation tool that simplifies your GitHub workflow with an interactive menu system.
+A powerful Bash-based Git automation tool that simplifies your GitHub workflow with an interactive menu system.git
 
 ## Overview
 
