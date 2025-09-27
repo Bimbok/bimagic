@@ -72,6 +72,63 @@ if [[ $remove_vars =~ ^[Yy]$ ]]; then
     done
 fi
 
+# Optional: Remove fzf if it was installed for Bimagic
+if command -v fzf &> /dev/null; then
+    echo ""
+    echo "fzf is currently installed on your system."
+    read -p "Do you want to remove fzf as well? (y/N): " -r remove_fzf < /dev/tty
+    if [[ $remove_fzf =~ ^[Yy]$ ]]; then
+        echo "Attempting to remove fzf..."
+        
+        # Try different package managers
+        if command -v apt &> /dev/null; then
+            echo "Detected apt package manager"
+            if sudo apt remove -y fzf 2>/dev/null; then
+                echo "✓ Successfully removed fzf via apt"
+            else
+                echo "✗ Failed to remove fzf via apt (may not be installed via package manager)"
+            fi
+        elif command -v dnf &> /dev/null; then
+            echo "Detected dnf package manager"
+            if sudo dnf remove -y fzf 2>/dev/null; then
+                echo "✓ Successfully removed fzf via dnf"
+            else
+                echo "✗ Failed to remove fzf via dnf (may not be installed via package manager)"
+            fi
+        elif command -v yum &> /dev/null; then
+            echo "Detected yum package manager"
+            if sudo yum remove -y fzf 2>/dev/null; then
+                echo "✓ Successfully removed fzf via yum"
+            else
+                echo "✗ Failed to remove fzf via yum (may not be installed via package manager)"
+            fi
+        elif command -v brew &> /dev/null; then
+            echo "Detected Homebrew package manager"
+            if brew uninstall fzf 2>/dev/null; then
+                echo "✓ Successfully removed fzf via Homebrew"
+            else
+                echo "✗ Failed to remove fzf via Homebrew (may not be installed via Homebrew)"
+            fi
+        elif command -v pacman &> /dev/null; then
+            echo "Detected pacman package manager"
+            if sudo pacman -R fzf 2>/dev/null; then
+                echo "✓ Successfully removed fzf via pacman"
+            else
+                echo "✗ Failed to remove fzf via pacman (may not be installed via package manager)"
+            fi
+        else
+            echo "⚠️  Could not detect package manager. fzf may have been installed manually."
+            echo "If you installed fzf from source, you can remove it manually:"
+            echo "  rm -rf ~/.fzf"
+            echo "  Remove fzf-related lines from your shell config files"
+        fi
+    else
+        echo "✓ Keeping fzf installed"
+    fi
+else
+    echo "✓ fzf is not installed, nothing to remove"
+fi
+
 echo ""
 echo "Bimagic has been successfully uninstalled."
 echo "Thank you for using Bimagic! ✨"
