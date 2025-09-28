@@ -153,9 +153,21 @@ while true; do
             fi
             ;;
         "2) Add files")
-            read -p "Enter files to add (or '.' for all): " -r files
-            git add "$files"
-            print_status "Files staged: $files"
+            # Show untracked + modified files, plus an [ALL] option
+            files=$( (echo "[ALL]"; git ls-files --others --modified --exclude-standard) \
+                | fzf --multi --prompt="Select files to add: " --height=15 --border)
+
+            if [[ -z "$files" ]]; then
+                print_warning "No files selected."
+            else
+                if [[ "$files" == "[ALL]" ]]; then
+                    git add .
+                    print_status "All files staged."
+                else
+                    git add $files
+                    print_status "Files staged: $files"
+                fi
+            fi
             ;;
         "3) Commit changes")
             read -p "Enter commit message: " -r msg
@@ -193,7 +205,7 @@ while true; do
         "6) Create/switch branch")
             # Show current branch and all available branches
             current_branch=$(get_current_branch)
-            print_branch "Current branch: $current_branch"
+            print_status "Current branch: $current_branch"
             echo
             print_status "Available branches:"
             show_branches
@@ -241,47 +253,34 @@ while true; do
             git status
             ;;
         "9) Remove files/folders (rm)")
-            read -p "Enter files/folders to remove (supports wildcards like *): " -r files
+            # List tracked + untracked files for removal
+            files=$(git ls-files --cached --others --exclude-standard \
+                | fzf --multi --prompt="Select files to remove: " --height=15 --border)
+
             if [[ -z "$files" ]]; then
-                print_error "No files specified!"
+                print_warning "No files selected."
                 continue
             fi
-            
-            # Safety check for dangerous patterns
-            if [[ "$files" == "*" ]]; then
-                print_warning "You're about to remove ALL files in the current directory!"
-                read -p "Are you sure? Type 'yes' to confirm: " -r confirm
-                if [[ "$confirm" != "yes" ]]; then
-                    echo "Operation cancelled."
-                    continue
-                fi
-            fi
-            
-            # Check if files exist before removing
-            if ls "$files" >/dev/null 2>&1; then
-                print_status "Files/folders to be removed:"
-                ls -la "$files"
-                echo
-                read -p "Confirm removal? (y/N): " -r confirm
-                if [[ "$confirm" =~ ^[Yy]$ ]]; then
-                    # Check if we're in a git repository
-                    if git rev-parse --git-dir > /dev/null 2>&1; then
-                        echo "🗑️  Removing from git tracking and filesystem..."
-                        # Use git rm for tracked files, regular rm for untracked
-                        git rm -rf "$files" 2>/dev/null || rm -rf "$files"
-                        print_status "Files/folders removed from git and filesystem: $files"
+
+            echo "Files selected for removal:"
+            echo "$files"
+            echo
+            read -p "Confirm removal? (y/N): " -r confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                # Try removing from git first, fallback to filesystem
+                for f in $files; do
+                    if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+                        git rm -rf "$f"
                     else
-                        echo "🗑️  Removing from filesystem (not a git repo)..."
-                        rm -rf "$files"
-                        print_status "Files/folders removed from filesystem: $files"
+                        rm -rf "$f"
                     fi
-                else
-                    print_status "Operation cancelled."
-                fi
+                done
+                print_status "Files removed: $files"
             else
-                print_error "❌ No files/folders found matching: $files"
+                print_status "Operation cancelled."
             fi
             ;;
+
         "10) Exit")
             echo "Git Wizard vanishes in a puff of smoke..."
             exit 0
