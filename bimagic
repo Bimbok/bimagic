@@ -180,23 +180,23 @@ while true; do
 
     # fzf menu
     choice=$(printf "%s\n" \
-        "1) Init new repo" \
-        "2) Add files" \
-        "3) Commit changes" \
-        "4) Push to remote" \
-        "5) Pull latest changes" \
-        "6) Create/switch branch" \
-        "7) Set remote (via token)" \
-        "8) Show status" \
-        "9) Remove files/folders (rm)" \
-        "10) Exit" \
-        "11) Merge branches"\
+        "Init new repo" \
+        "Add files" \
+        "Commit changes" \
+        "Push to remote" \
+        "Pull latest changes" \
+        "Create/switch branch" \
+        "Set remote (via token)" \
+        "Show status" \
+        "Remove files/folders (rm)" \
+        "Exit" \
+        "Merge branches"\
         | fzf --prompt="Choose your spell: " --height=14 --border --ansi)
 
     echo
 
     case "$choice" in
-        "1) Init new repo")
+        "Init new repo")
             read -p "Enter repo directory name (or '.' for current dir): " -r dirname
             if [[ "$dirname" == "." ]]; then
                 git init
@@ -214,7 +214,7 @@ while true; do
                 print_status "Default branch renamed from 'master' to 'main'"
             fi
             ;;
-        "2) Add files")
+        "Add files")
             # Show untracked + modified files, plus an [ALL] option
             files=$( (echo "[ALL]"; git ls-files --others --modified --exclude-standard) \
                 | fzf --multi --prompt="Select files to add: " --height=15 --border)
@@ -231,12 +231,12 @@ while true; do
                 fi
             fi
             ;;
-        "3) Commit changes")
+        "Commit changes")
             read -p "Enter commit message: " -r msg
             git commit -m "$msg"
             print_status "Commit done!"
             ;;
-        "4) Push to remote")
+        "Push to remote")
             branch=$(git symbolic-ref --short HEAD 2>/dev/null)
             branch=${branch:-main}
 
@@ -253,7 +253,7 @@ while true; do
             echo "Pushing branch '$branch' to '$remote'..."
             git push -u "$remote" "$branch"
             ;;
-        "5) Pull latest changes")
+        "Pull latest changes")
             read -p "Enter branch to pull (default main): " -r branch
             branch=${branch:-main}
             
@@ -264,7 +264,7 @@ while true; do
                 git pull "$remote" "$branch"
             fi
             ;;
-        "6) Create/switch branch")
+        "Create/switch branch")
             # Show current branch and all available branches
             current_branch=$(get_current_branch)
             print_status "Current branch: $current_branch"
@@ -304,17 +304,17 @@ while true; do
                     ;;
             esac
             ;;
-        "7) Set remote (via token)")
+        "Set remote (via token)")
             read -p "Enter repo name (example: my-repo.git): " -r reponame
             remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
             git remote remove origin 2>/dev/null
             git remote add origin "$remote_url"
             echo "Remote 'origin' set to $remote_url"
             ;;
-        "8) Show status")
+        "Show status")
             git status
             ;;
-        "9) Remove files/folders (rm)")
+        "Remove files/folders (rm)")
             # List tracked + untracked files for removal
             files=$(git ls-files --cached --others --exclude-standard \
                 | fzf --multi --prompt="Select files to remove: " --height=15 --border)
@@ -343,11 +343,11 @@ while true; do
             fi
             ;;
 
-        "10) Exit")
+        "Exit")
             echo "Git Wizard vanishes in a puff of smoke..."
             exit 0
             ;;
-        "11) Merge branches")
+        "Merge branches")
             current_branch=$(get_current_branch)
             print_status "You are on branch: $current_branch"
             echo
