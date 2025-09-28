@@ -41,6 +41,48 @@ show_branches() {
     done | sort -u
 }
 
+# show_repo_status() {
+#     if ! git rev-parse --git-dir >/dev/null 2>&1; then
+#         print_warning "Not inside a git repository!"
+#         return
+#     fi
+
+#     local branch=$(get_current_branch)
+
+#     # Ahead/behind info
+#     local upstream=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
+#     local ahead behind
+#     if [[ -n "$upstream" ]]; then
+#         ahead=$(git rev-list --count "$upstream"..HEAD 2>/dev/null)
+#         behind=$(git rev-list --count HEAD.."$upstream" 2>/dev/null)
+#     else
+#         ahead=0
+#         behind=0
+#     fi
+
+#     # Working tree status
+#     if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+#         if git ls-files -u | grep -q .; then
+#             status="🔴 ${RED}conflicts${NC}"
+#             color=$RED
+#         else
+#             status="🟢 ${GREEN}clean${NC}"
+#             color=$GREEN
+#         fi
+#     else
+#         status="🟡 ${YELLOW}uncommitted${NC}"
+#         color=$YELLOW
+#     fi
+
+#     echo
+#     echo -e "${color}===== REPO STATUS =====${NC}"
+#     echo -e "GITHUB USER: ${GREEN}$GITHUB_USER${NC}"
+#     echo -e "BRANCH: ${GREEN}$branch${NC}"
+#     echo -e "AHEAD: $ahead | BEHIND: $behind"
+#     echo -e "STATUS: $status"
+#     echo -e "${color}=======================${NC}"
+# }
+
 show_repo_status() {
     if ! git rev-parse --git-dir >/dev/null 2>&1; then
         print_warning "Not inside a git repository!"
@@ -61,27 +103,48 @@ show_repo_status() {
     fi
 
     # Working tree status
+    local status
     if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
         if git ls-files -u | grep -q .; then
-            status="🔴 ${RED}conflicts${NC}"
-            color=$RED
+            status="🔴 conflicts"
+            status_colored="🔴 ${RED}conflicts${NC}"
+            color="$RED"
+
         else
-            status="🟢 ${GREEN}clean${NC}"
-            color=$GREEN
+            status="🟢 clean"
+            status_colored="🟢 ${GREEN}clean${NC}"
+            color="$GREEN"
         fi
     else
-        status="🟡 ${YELLOW}uncommitted${NC}"
-        color=$YELLOW
+        status="🟡 uncommitted"
+        status_colored="🟡 ${YELLOW}uncommitted${NC}"
+        color="$YELLOW"
     fi
 
+    # Lines WITHOUT color (for width calc)
+    local line1="GITHUB USER: $GITHUB_USER"
+    local line2="BRANCH: $branch"
+    local line3="AHEAD: $ahead | BEHIND: $behind"
+    local line4="STATUS: $status"
+
+    # Find max width
+    local maxlen=0
+    for l in "$line1" "$line2" "$line3" "$line4"; do
+        [[ ${#l} -gt $maxlen ]] && maxlen=${#l}
+    done
+    local border_len=$((maxlen + 5))
+    (( maxlen+=3 ))
+    # Print fancy box
     echo
-    echo -e "${color}===== REPO STATUS =====${NC}"
-    echo -e "GITHUB USER: ${GREEN}$GITHUB_USER${NC}"
-    echo -e "BRANCH: ${GREEN}$branch${NC}"
-    echo -e "AHEAD: $ahead | BEHIND: $behind"
-    echo -e "STATUS: $status"
-    echo -e "${color}=======================${NC}"
+    echo "╭$(printf '─%.0s' $(seq 1 $border_len))╮"
+    printf "│ %-*s │\n" "$maxlen" "$line1"
+    printf "│ %-*s │\n" "$maxlen" "$line2"
+    printf "│ %-*s │\n" "$maxlen" "$line3"
+    # Print STATUS with colors
+    printf "│ %-*s │\n" "$((maxlen + 2))" "$line4"
+    echo "╰$(printf '─%.0s' $(seq 1 $border_len))╯"
 }
+
 
 # Check if environment variables are set
 if [[ -z "$GITHUB_USER" ]]; then
