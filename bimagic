@@ -41,6 +41,111 @@ show_branches() {
     done | sort -u
 }
 
+# show_repo_status() {
+#     if ! git rev-parse --git-dir >/dev/null 2>&1; then
+#         print_warning "Not inside a git repository!"
+#         return
+#     fi
+
+#     local branch=$(get_current_branch)
+
+#     # Ahead/behind info
+#     local upstream=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
+#     local ahead behind
+#     if [[ -n "$upstream" ]]; then
+#         ahead=$(git rev-list --count "$upstream"..HEAD 2>/dev/null)
+#         behind=$(git rev-list --count HEAD.."$upstream" 2>/dev/null)
+#     else
+#         ahead=0
+#         behind=0
+#     fi
+
+#     # Working tree status
+#     if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+#         if git ls-files -u | grep -q .; then
+#             status="🔴 ${RED}conflicts${NC}"
+#             color=$RED
+#         else
+#             status="🟢 ${GREEN}clean${NC}"
+#             color=$GREEN
+#         fi
+#     else
+#         status="🟡 ${YELLOW}uncommitted${NC}"
+#         color=$YELLOW
+#     fi
+
+#     echo
+#     echo -e "${color}===== REPO STATUS =====${NC}"
+#     echo -e "GITHUB USER: ${GREEN}$GITHUB_USER${NC}"
+#     echo -e "BRANCH: ${GREEN}$branch${NC}"
+#     echo -e "AHEAD: $ahead | BEHIND: $behind"
+#     echo -e "STATUS: $status"
+#     echo -e "${color}=======================${NC}"
+# }
+
+show_repo_status() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        print_warning "Not inside a git repository!"
+        return
+    fi
+
+    local branch=$(get_current_branch)
+
+    # Ahead/behind info
+    local upstream=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
+    local ahead behind
+    if [[ -n "$upstream" ]]; then
+        ahead=$(git rev-list --count "$upstream"..HEAD 2>/dev/null)
+        behind=$(git rev-list --count HEAD.."$upstream" 2>/dev/null)
+    else
+        ahead=0
+        behind=0
+    fi
+
+    # Working tree status
+    local status
+    if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+        if git ls-files -u | grep -q .; then
+            status="🔴 conflicts"
+            # status_colored="🔴 ${RED}conflicts${NC}"
+            color="$RED"
+
+        else
+            status="🟢 clean"
+            # status_colored="🟢 ${GREEN}clean${NC}"
+            color="$GREEN"
+        fi
+    else
+        status="🟡 uncommitted"
+        # status_colored="🟡 ${YELLOW}uncommitted${NC}"
+        color="$YELLOW"
+    fi
+
+    # Lines WITHOUT color (for width calc)
+    local line1="GITHUB USER: $GITHUB_USER"
+    local line2="BRANCH: $branch"
+    local line3="AHEAD: $ahead | BEHIND: $behind"
+    local line4="STATUS: $status"
+
+    # Find max width
+    local maxlen=0
+    for l in "$line1" "$line2" "$line3" "$line4"; do
+        [[ ${#l} -gt $maxlen ]] && maxlen=${#l}
+    done
+    local border_len=$((maxlen + 5))
+    (( maxlen+=3 ))
+    # Print fancy box
+    echo
+    echo -e "${color}╭$(printf '─%.0s' $(seq 1 $border_len))╮${NC}"
+    printf "${color}│${NC} %-*s ${color}│${NC}\n" "$maxlen" "$line1"
+    printf "${color}│${NC} %-*s ${color}│${NC}\n" "$maxlen" "$line2"
+    printf "${color}│${NC} %-*s ${color}│${NC}\n" "$maxlen" "$line3"
+    # Print STATUS with colors
+    printf "${color}│${NC} %-*s ${color}│${NC}\n" "$((maxlen + 2))" "$line4"
+    echo -e "${color}╰$(printf '─%.0s' $(seq 1 $border_len))╯${NC}"
+}
+
+
 # Check if environment variables are set
 if [[ -z "$GITHUB_USER" ]]; then
     print_warning "GITHUB_USER environment variable is not set!"
@@ -55,8 +160,6 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
     print_status "  export GITHUB_TOKEN=\"your_github_token\""
     exit 1
 fi
-
-print_status "Using GitHub user: $GITHUB_USER"
 
 while true; do
     # echo "Choose your spell:"
@@ -73,24 +176,28 @@ while true; do
     # read -p "Enter choice: " -r choice
     # echo
 
+    show_repo_status   # <-- shows the status dashboard at the top
+
     # fzf menu
     choice=$(printf "%s\n" \
-        "1) Init new repo" \
-        "2) Add files" \
-        "3) Commit changes" \
-        "4) Push to remote" \
-        "5) Pull latest changes" \
-        "6) Create/switch branch" \
-        "7) Set remote (via token)" \
-        "8) Show status" \
-        "9) Remove files/folders (rm)" \
-        "10) Exit" \
+        "Init new repo" \
+        "Add files" \
+        "Commit changes" \
+        "Push to remote" \
+        "Pull latest changes" \
+        "Create/switch branch" \
+        "Set remote (via token)" \
+        "Show status" \
+        "Remove files/folders (rm)" \
+        "Uninitialize repo" \
+        "Exit" \
+        "Merge branches" \
         | fzf --prompt="Choose your spell: " --height=14 --border --ansi)
 
     echo
 
     case "$choice" in
-        "1) Init new repo")
+        "Init new repo")
             read -p "Enter repo directory name (or '.' for current dir): " -r dirname
             if [[ "$dirname" == "." ]]; then
                 git init
@@ -108,17 +215,29 @@ while true; do
                 print_status "Default branch renamed from 'master' to 'main'"
             fi
             ;;
-        "2) Add files")
-            read -p "Enter files to add (or '.' for all): " -r files
-            git add "$files"
-            print_status "Files staged: $files"
+        "Add files")
+            # Show untracked + modified files, plus an [ALL] option
+            files=$( (echo "[ALL]"; git ls-files --others --modified --exclude-standard) \
+                | fzf --multi --prompt="Select files to add: " --height=15 --border)
+
+            if [[ -z "$files" ]]; then
+                print_warning "No files selected."
+            else
+                if [[ "$files" == "[ALL]" ]]; then
+                    git add .
+                    print_status "All files staged."
+                else
+                    git add $files
+                    print_status "Files staged: $files"
+                fi
+            fi
             ;;
-        "3) Commit changes")
+        "Commit changes")
             read -p "Enter commit message: " -r msg
             git commit -m "$msg"
             print_status "Commit done!"
             ;;
-        "4) Push to remote")
+        "Push to remote")
             branch=$(git symbolic-ref --short HEAD 2>/dev/null)
             branch=${branch:-main}
 
@@ -135,7 +254,7 @@ while true; do
             echo "Pushing branch '$branch' to '$remote'..."
             git push -u "$remote" "$branch"
             ;;
-        "5) Pull latest changes")
+        "Pull latest changes")
             read -p "Enter branch to pull (default main): " -r branch
             branch=${branch:-main}
             
@@ -146,10 +265,10 @@ while true; do
                 git pull "$remote" "$branch"
             fi
             ;;
-        "6) Create/switch branch")
+        "Create/switch branch")
             # Show current branch and all available branches
             current_branch=$(get_current_branch)
-            print_branch "Current branch: $current_branch"
+            print_status "Current branch: $current_branch"
             echo
             print_status "Available branches:"
             show_branches
@@ -186,61 +305,87 @@ while true; do
                     ;;
             esac
             ;;
-        "7) Set remote (via token)")
+        "Set remote (via token)")
             read -p "Enter repo name (example: my-repo.git): " -r reponame
             remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
             git remote remove origin 2>/dev/null
             git remote add origin "$remote_url"
             echo "Remote 'origin' set to $remote_url"
             ;;
-        "8) Show status")
+        "Show status")
             git status
             ;;
-        "9) Remove files/folders (rm)")
-            read -p "Enter files/folders to remove (supports wildcards like *): " -r files
+        "Remove files/folders (rm)")
+            # List tracked + untracked files for removal
+            files=$(git ls-files --cached --others --exclude-standard \
+                | fzf --multi --prompt="Select files to remove: " --height=15 --border)
+
             if [[ -z "$files" ]]; then
-                print_error "No files specified!"
+                print_warning "No files selected."
                 continue
             fi
-            
-            # Safety check for dangerous patterns
-            if [[ "$files" == "*" ]]; then
-                print_warning "You're about to remove ALL files in the current directory!"
-                read -p "Are you sure? Type 'yes' to confirm: " -r confirm
-                if [[ "$confirm" != "yes" ]]; then
-                    echo "Operation cancelled."
-                    continue
-                fi
-            fi
-            
-            # Check if files exist before removing
-            if ls "$files" >/dev/null 2>&1; then
-                print_status "Files/folders to be removed:"
-                ls -la "$files"
-                echo
-                read -p "Confirm removal? (y/N): " -r confirm
-                if [[ "$confirm" =~ ^[Yy]$ ]]; then
-                    # Check if we're in a git repository
-                    if git rev-parse --git-dir > /dev/null 2>&1; then
-                        echo "🗑️  Removing from git tracking and filesystem..."
-                        # Use git rm for tracked files, regular rm for untracked
-                        git rm -rf "$files" 2>/dev/null || rm -rf "$files"
-                        print_status "Files/folders removed from git and filesystem: $files"
+
+            echo "Files selected for removal:"
+            echo "$files"
+            echo
+            read -p "Confirm removal? (y/N): " -r confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                # Try removing from git first, fallback to filesystem
+                for f in $files; do
+                    if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+                        git rm -rf "$f"
                     else
-                        echo "🗑️  Removing from filesystem (not a git repo)..."
-                        rm -rf "$files"
-                        print_status "Files/folders removed from filesystem: $files"
+                        rm -rf "$f"
                     fi
-                else
-                    print_status "Operation cancelled."
-                fi
+                done
+                print_status "Files removed: $files"
             else
-                print_error "❌ No files/folders found matching: $files"
+                print_status "Operation cancelled."
             fi
             ;;
-        "10) Exit")
+        "Uninitialize repo")
+           echo "⚠️ WARNING: This will completely uninitialize the Git repository in this folder."
+            echo "This action will delete the .git directory and cannot be undone!"
+            echo
+            read -p "Are you sure you want to continue? (yes/no): " confirm_uninit
+
+            if [[ "$confirm_uninit" == "yes" ]]; then
+                if [ -d ".git" ]; then
+                    rm -rf .git
+                    echo "✅ Git repository has been uninitialized."
+                else
+                    echo "❌ No .git directory found here. Nothing to do."
+                fi
+            elif [[ "$confirm_uninit" == "no" ]]; then
+                echo "Operation cancelled."
+            else
+                echo "Invalid choice. Please type 'yes' or 'no'."
+            fi
+            ;;
+        "Exit")
             echo "Git Wizard vanishes in a puff of smoke..."
             exit 0
+            ;;
+        "Merge branches")
+            current_branch=$(get_current_branch)
+            print_status "You are on branch: $current_branch"
+            echo
+
+            # Pick branch to merge from
+            merge_branch=$(git branch --format='%(refname:short)' \
+                | grep -v "^$current_branch\$" \
+                | fzf --prompt="Select branch to merge into $current_branch: " --height=10 --border)
+
+            if [[ -z "$merge_branch" ]]; then
+                print_warning "No branch selected. Merge cancelled."
+            else
+                echo "Merging branch '$merge_branch' into '$current_branch'..."
+                if git merge "$merge_branch"; then
+                    print_status "✅ Merge successful!"
+                else
+                    print_error "❌ Merge had conflicts! Resolve them manually."
+                fi
+            fi
             ;;
         *)
             print_error "Invalid choice! Try again."

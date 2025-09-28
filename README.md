@@ -8,6 +8,9 @@ A powerful Bash-based Git automation tool that simplifies your GitHub workflow w
 
 Bimagic is an interactive command-line tool that streamlines common Git operations, making version control more accessible through a user-friendly menu interface. It handles repository initialization, committing, branching, and remote operations with GitHub integration using personal access tokens.
 
+## Sample
+https://github.com/user-attachments/assets/36d09f38-fe48-4476-8b08-f592222224a9
+
 ## Features
 
 - 🔮 Interactive menu-driven interface
@@ -113,7 +116,8 @@ You'll be presented with an interactive menu where you can choose from various G
 7. **Set remote** - Manually set the remote repository URL
 8. **Show status** - Display the current repository status
 9. **Remove files/folders (rm)** - Safely remove files and folders with git integration
-10. **Exit** - Quit the wizard
+10. **Uninitialize Repo** – Remove Git tracking from a project, allowing you to start fresh
+11. **Exit** - Quit the wizard
 
 ### File Removal (Option 9)
 
