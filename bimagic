@@ -113,7 +113,6 @@ while true; do
     # read -p "Enter choice: " -r choice
     # echo
 
-    clear
     show_repo_status   # <-- shows the status dashboard at the top
 
     # fzf menu
