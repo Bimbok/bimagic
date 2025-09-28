@@ -128,6 +128,7 @@ while true; do
         "8) Show status" \
         "9) Remove files/folders (rm)" \
         "10) Exit" \
+        "11) Merge branches"\
         | fzf --prompt="Choose your spell: " --height=14 --border --ansi)
 
     echo
@@ -284,6 +285,27 @@ while true; do
         "10) Exit")
             echo "Git Wizard vanishes in a puff of smoke..."
             exit 0
+            ;;
+        "11) Merge branches")
+            current_branch=$(get_current_branch)
+            print_status "You are on branch: $current_branch"
+            echo
+
+            # Pick branch to merge from
+            merge_branch=$(git branch --format='%(refname:short)' \
+                | grep -v "^$current_branch\$" \
+                | fzf --prompt="Select branch to merge into $current_branch: " --height=10 --border)
+
+            if [[ -z "$merge_branch" ]]; then
+                print_warning "No branch selected. Merge cancelled."
+            else
+                echo "Merging branch '$merge_branch' into '$current_branch'..."
+                if git merge "$merge_branch"; then
+                    print_status "✅ Merge successful!"
+                else
+                    print_error "❌ Merge had conflicts! Resolve them manually."
+                fi
+            fi
             ;;
         *)
             print_error "Invalid choice! Try again."
