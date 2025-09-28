@@ -107,17 +107,17 @@ show_repo_status() {
     if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
         if git ls-files -u | grep -q .; then
             status="🔴 conflicts"
-            status_colored="🔴 ${RED}conflicts${NC}"
+            # status_colored="🔴 ${RED}conflicts${NC}"
             color="$RED"
 
         else
             status="🟢 clean"
-            status_colored="🟢 ${GREEN}clean${NC}"
+            # status_colored="🟢 ${GREEN}clean${NC}"
             color="$GREEN"
         fi
     else
         status="🟡 uncommitted"
-        status_colored="🟡 ${YELLOW}uncommitted${NC}"
+        # status_colored="🟡 ${YELLOW}uncommitted${NC}"
         color="$YELLOW"
     fi
 
@@ -136,13 +136,13 @@ show_repo_status() {
     (( maxlen+=3 ))
     # Print fancy box
     echo
-    echo "╭$(printf '─%.0s' $(seq 1 $border_len))╮"
-    printf "│ %-*s │\n" "$maxlen" "$line1"
-    printf "│ %-*s │\n" "$maxlen" "$line2"
-    printf "│ %-*s │\n" "$maxlen" "$line3"
+    echo -e "${color}╭$(printf '─%.0s' $(seq 1 $border_len))╮${NC}"
+    printf "${color}│${NC} %-*s ${color}│${NC}\n" "$maxlen" "$line1"
+    printf "${color}│${NC} %-*s ${color}│${NC}\n" "$maxlen" "$line2"
+    printf "${color}│${NC} %-*s ${color}│${NC}\n" "$maxlen" "$line3"
     # Print STATUS with colors
-    printf "│ %-*s │\n" "$((maxlen + 2))" "$line4"
-    echo "╰$(printf '─%.0s' $(seq 1 $border_len))╯"
+    printf "${color}│${NC} %-*s ${color}│${NC}\n" "$((maxlen + 2))" "$line4"
+    echo -e "${color}╰$(printf '─%.0s' $(seq 1 $border_len))╯${NC}"
 }
 
 
