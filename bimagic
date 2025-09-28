@@ -189,9 +189,9 @@ while true; do
         "Set remote (via token)" \
         "Show status" \
         "Remove files/folders (rm)" \
-        "Uninitialize repo"\
+        "Uninitialize repo" \
         "Exit" \
-        "Merge branches"\
+        "Merge branches" \
         | fzf --prompt="Choose your spell: " --height=14 --border --ansi)
 
     echo
