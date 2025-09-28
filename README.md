@@ -116,7 +116,8 @@ You'll be presented with an interactive menu where you can choose from various G
 7. **Set remote** - Manually set the remote repository URL
 8. **Show status** - Display the current repository status
 9. **Remove files/folders (rm)** - Safely remove files and folders with git integration
-10. **Exit** - Quit the wizard
+10. **Uninitialize Repo** – Remove Git tracking from a project, allowing you to start fresh
+11. **Exit** - Quit the wizard
 
 ### File Removal (Option 9)
 
