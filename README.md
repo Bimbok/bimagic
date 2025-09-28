@@ -8,6 +8,9 @@ A powerful Bash-based Git automation tool that simplifies your GitHub workflow w
 
 Bimagic is an interactive command-line tool that streamlines common Git operations, making version control more accessible through a user-friendly menu interface. It handles repository initialization, committing, branching, and remote operations with GitHub integration using personal access tokens.
 
+## Sample
+https://github.com/user-attachments/assets/36d09f38-fe48-4476-8b08-f592222224a9
+
 ## Features
 
 - 🔮 Interactive menu-driven interface
