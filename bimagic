@@ -176,7 +176,7 @@ show_contributor_stats() {
         "Last 90 days" \
         "Last year" \
         "All time" \
-        | fzf --prompt="Select time range: " --height=10 --border)
+        | fzf --prompt="Select time range: " --height=10 --border --ansi)
     
     local since=""
     case "$time_range" in
@@ -191,7 +191,7 @@ show_contributor_stats() {
             ;;
     esac
 
-    print_status "📊 Analyzing contributions ($time_range)..."
+    print_status "Analyzing contributions ($time_range)..."
     echo
 
     # Temporary file for processing
@@ -293,14 +293,14 @@ show_contributor_stats() {
     echo
     echo -e "${CYAN}Highlights:${NC}"
     if [[ -n "$most_active_author" ]]; then
-        echo -e "Most Active: $most_active_author ($most_commits commits)"
+        echo -e "${BLUE}Most Active:${NC} $most_active_author ($most_commits commits)"
     fi
     if [[ -n "$most_productive_author" ]]; then
-        echo -e "Most Productive: $most_productive_author ($highest_avg lines/commit)"
+        echo -e "${BLUE}Most Productive:${NC} $most_productive_author ($highest_avg lines/commit)"
     fi
     
     local total_contributors=$(echo "$stats" | wc -l)
-    echo -e "Total Contributors: $total_contributors"
+    echo -e "${BLUE}Total Contributors:${NC} $total_contributors"
 }
 
 # Check if environment variables are set
