@@ -12,16 +12,56 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Sound functions
+play_sound() {
+    local sound_type=$1
+    case "$sound_type" in
+        "success")
+            # Pleasant bell sound
+            echo -e "\a"  # System bell
+            # Alternative: play a beep sequence
+            for i in {1..2}; do
+                printf "\a"
+                sleep 0.1
+            done
+            ;;
+        "error")
+            # Harsher error sound
+            for i in {1..3}; do
+                printf "\a"
+                sleep 0.05
+            done
+            ;;
+        "warning")
+            # Single warning beep
+            printf "\a"
+            ;;
+        "magic")
+            # Magical sequence for special operations
+            for i in {1..3}; do
+                printf "\a"
+                sleep 0.2
+            done
+            ;;
+        "progress")
+            # Subtle progress indicator
+            printf "\a"
+            ;;
+    esac
+}
 print_status() {
     echo -e "${GREEN}[INFO]${NC} $1"
+    play_sound "success"
 }
 
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+    play_sound "error"
 }
 
 print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
+    play_sound "warning"
 }
 
 # Function to get current branch with color
