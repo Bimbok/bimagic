@@ -342,6 +342,16 @@ show_contributor_stats() {
     local total_contributors=$(echo "$stats" | wc -l)
     echo -e "${BLUE}Total Contributors:${NC} $total_contributors"
 }
+#function to display git graph
+pretty_git_log() {
+  git log --graph \
+    --abbrev-commit \
+    --decorate \
+    --date=short \
+    --format="%C(auto)%h%Creset %C(blue)%ad%Creset %C(green)%an%Creset %C(yellow)%d%Creset %Creset%s" \
+    --all
+}
+
 
 # Check if environment variables are set
 if [[ -z "$GITHUB_USER" ]]; then
@@ -385,13 +395,14 @@ while true; do
         "Create/switch branch" \
         "Set remote (via token)" \
         "Show status" \
+        "Contributor Statistics" \
+        "Git graph" \
         "Remove files/folders (rm)" \
         "Merge branches" \
         "Uninitialize repo" \
-        "Contributor Statistics" \
         "Revert commit(s)" \
         "Exit" \
-        | fzf --prompt="Choose your spell: " --height=17 --border --ansi)
+        | fzf --prompt="Choose your spell: " --height=19 --border --ansi)
 
     echo
 
@@ -546,7 +557,7 @@ while true; do
            print_warning "This will completely uninitialize the Git repository in this folder."
             echo "This action will delete the .git directory and cannot be undone!"
             echo
-            read -p "Are you sure you want to continue? (yes/no): " confirm_uninit
+            read -r -p "Are you sure you want to continue? (yes/no): " confirm_uninit
 
             if [[ "$confirm_uninit" == "yes" ]]; then
                 if [ -d ".git" ]; then
@@ -590,44 +601,57 @@ while true; do
             show_contributor_stats
             ;;
 
-"Revert commit(s)")
-    print_status "Fetching commit history..."
-    echo
+        "Revert commit(s)")
+            print_status "Fetching commit history..."
+            echo
 
-    # Show commits as "<hash> <message>" but keep hash separately
-    commits=$(git log --oneline --decorate \
-        | fzf --multi --ansi --height=20 --border \
-        --prompt="Select commit(s) to revert: " \
-        --header="Use TAB to select multiple commits" \
-        | awk '{print $1}')
+            # Show commits as "<hash> <message>" but keep hash separately
+            commits=$(git log --oneline --decorate \
+                | fzf --multi --ansi --height=20 --border \
+                --prompt="Select commit(s) to revert: " \
+                --header="Use TAB to select multiple commits" \
+                | awk '{print $1}')
 
-    if [[ -z "$commits" ]]; then
-        print_warning "No commit selected. Revert cancelled."
-        continue
-    fi
-
-    echo "You selected:"
-    echo "$commits"
-    echo
-    read -p "Confirm revert? (y/N): " -r confirm
-
-    if [[ "$confirm" =~ ^[Yy]$ ]]; then
-        for c in $commits; do
-            echo "Reverting commit $c..."
-            if git revert --no-edit "$c"; then
-                print_status "Commit $c reverted."
-            else
-                print_error "Conflict occurred while reverting $c!"
-                echo "Please resolve conflicts, then run:"
-                echo "  git revert --continue"
-                break
+            if [[ -z "$commits" ]]; then
+                print_warning "No commit selected. Revert cancelled."
+                continue
             fi
-        done
-    else
-        print_status "Revert cancelled."
-    fi
-    ;;
 
+            echo "You selected:"
+            echo "$commits"
+            echo
+            read -p "Confirm revert? (y/N): " -r confirm
+
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                for c in $commits; do
+                    echo "Reverting commit $c..."
+                    if git revert --no-edit "$c"; then
+                        print_status "Commit $c reverted."
+                    else
+                        print_error "Conflict occurred while reverting $c!"
+                        echo "Please resolve conflicts, then run:"
+                        echo "  git revert --continue"
+                        break
+                    fi
+                done
+            else
+                print_status "Revert cancelled."
+            fi
+            ;;
+
+        "Git graph")
+            color=${YELLOW}
+            line1="Git graph"
+            line2="[INFO] press 'q' to exit"
+
+            echo -e "${color}╭$(printf '─%.0s' $(seq 1 30))╮${NC}"
+            printf "${color}│${NC} %-*s ${color}│${NC}\n" 28 "$line1"
+            printf "${color}│${NC} %-*s ${color}│${NC}\n" 28 "$line2"
+            echo -e "${color}╰$(printf '─%.0s' $(seq 1 30))╯${NC}"
+
+            sleep 2
+            pretty_git_log
+            ;;
 
         *)
             print_error "Invalid choice! Try again."
@@ -635,6 +659,5 @@ while true; do
             break
             ;;
     esac
-
     echo
 done
