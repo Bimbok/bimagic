@@ -7,18 +7,61 @@ echo
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Sound functions
+play_sound() {
+    local sound_type=$1
+    case "$sound_type" in
+        "success")
+            # Pleasant bell sound
+            echo -e "\a"  # System bell
+            # Alternative: play a beep sequence
+            for i in {1..2}; do
+                printf "\a"
+                sleep 0.1
+            done
+            ;;
+        "error")
+            # Harsher error sound
+            for i in {1..3}; do
+                printf "\a"
+                sleep 0.05
+            done
+            ;;
+        "warning")
+            # Single warning beep
+            printf "\a"
+            ;;
+        "magic")
+            # Magical sequence for special operations
+            for i in {1..3}; do
+                printf "\a"
+                sleep 0.2
+            done
+            ;;
+        "progress")
+            # Subtle progress indicator
+            printf "\a"
+            ;;
+    esac
+}
 print_status() {
     echo -e "${GREEN}[INFO]${NC} $1"
+    play_sound "success"
 }
 
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+    play_sound "error"
 }
 
 print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
+    play_sound "warning"
 }
 
 # Function to get current branch with color
@@ -146,6 +189,170 @@ show_repo_status() {
 }
 
 
+generate_bar() {
+    local percentage=$1
+    local bar=""
+    # Convert float to integer for bar calculation
+    local int_percentage=${percentage%.*}
+    local bars=$((int_percentage / 2)) # Each █ represents 2%
+    
+    for ((i=0; i<bars; i++)); do
+        bar+="█"
+    done
+    echo "$bar"
+}
+
+# Function to get contributor statistics
+show_contributor_stats() {
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        print_error "Not a git repository!"
+        return 1
+    fi
+
+    # Time range selection
+    local time_range=$(printf "%s\n" \
+        "Last 7 days" \
+        "Last 30 days" \
+        "Last 90 days" \
+        "Last year" \
+        "All time" \
+        | fzf --prompt="Select time range: " --height=10 --border --ansi)
+    
+    local since=""
+    case "$time_range" in
+        "Last 7 days") since="--since='7 days ago'" ;;
+        "Last 30 days") since="--since='30 days ago'" ;;
+        "Last 90 days") since="--since='3 months ago'" ;;
+        "Last year") since="--since='1 year ago'" ;;
+        "All time") since="" ;;
+        *) 
+            print_warning "No time range selected."
+            return 1
+            ;;
+    esac
+
+    print_status "Analyzing contributions ($time_range)..."
+    echo
+
+    # Temporary file for processing
+    local temp_file=$(mktemp)
+    
+    # Get git log with numstat and format for processing
+    if [[ -n "$since" ]]; then
+        eval "git log --pretty=format:'%aN' --numstat $since" > "$temp_file" 2>/dev/null
+    else
+        git log --pretty=format:"%aN" --numstat > "$temp_file" 2>/dev/null
+    fi
+
+    # Check if we got any data
+    if [[ ! -s "$temp_file" ]]; then
+        print_error "No contribution data found for the selected period."
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    # Process the data with awk
+    local stats=$(awk '
+    BEGIN {
+        total_lines = 0
+    }
+    /^[0-9]/ {
+        added = $1
+        deleted = $2
+        if (added != "-") total_added += added
+        if (deleted != "-") total_deleted += deleted
+        author = last_author
+        if (author != "") {
+            author_lines[author] += added + deleted
+            total_lines += added + deleted
+            author_commits[author]++
+        }
+    }
+    !/^[0-9]/ && !/^$/ {
+        last_author = $0
+        if (!author_commits[$0]) {
+            author_commits[$0] = 0
+        }
+    }
+    END {
+        for (author in author_lines) {
+            if (total_lines > 0) {
+                percentage = (author_lines[author] / total_lines) * 100
+            } else {
+                percentage = 0
+            }
+            printf "%s|%d|%d|%.1f\n", author, author_lines[author], author_commits[author], percentage
+        }
+    }' "$temp_file" | sort -t'|' -k2 -nr)
+
+    rm -f "$temp_file"
+
+    if [[ -z "$stats" ]]; then
+        print_error "No contribution data found for the selected period."
+        return 1
+    fi
+
+    # Calculate additional metrics
+    local most_active_author=""
+    local most_commits=0
+    local most_productive_author=""
+    local highest_avg=0
+
+    # Display header
+    echo -e "${PURPLE}Contribution Report ($time_range)${NC}"
+    echo "$(printf '─%.0s' $(seq 1 45))"
+    
+    # Display each contributor
+    while IFS='|' read -r author lines commits percentage; do
+        # Clean up author name
+        author=$(echo "$author" | sed 's/^ *//;s/ *$//')
+        
+        # Generate bar (max 50 characters for 100%)
+        local bar=$(generate_bar "$percentage")
+        
+        printf "%-15s %-25s %5.1f%% (%d lines)\n" \
+            "$author" "$bar" "$percentage" "$lines"
+        
+        # Track most active (most commits)
+        if [[ $commits -gt $most_commits ]]; then
+            most_commits=$commits
+            most_active_author="$author"
+        fi
+        
+        # Track most productive (highest average lines per commit)
+        if [[ $commits -gt 0 ]]; then
+            local avg_lines=$((lines / commits))
+            if [[ $avg_lines -gt $highest_avg ]]; then
+                highest_avg=$avg_lines
+                most_productive_author="$author"
+            fi
+        fi
+        
+    done <<< "$stats"
+
+    echo
+    echo -e "${CYAN}Highlights:${NC}"
+    if [[ -n "$most_active_author" ]]; then
+        echo -e "${BLUE}Most Active:${NC} $most_active_author ($most_commits commits)"
+    fi
+    if [[ -n "$most_productive_author" ]]; then
+        echo -e "${BLUE}Most Productive:${NC} $most_productive_author ($highest_avg lines/commit)"
+    fi
+    
+    local total_contributors=$(echo "$stats" | wc -l)
+    echo -e "${BLUE}Total Contributors:${NC} $total_contributors"
+}
+#function to display git graph
+pretty_git_log() {
+  git log --graph \
+    --abbrev-commit \
+    --decorate \
+    --date=short \
+    --format="%C(auto)%h%Creset %C(blue)%ad%Creset %C(green)%an%Creset %C(yellow)%d%Creset %Creset%s" \
+    --all
+}
+
+
 # Check if environment variables are set
 if [[ -z "$GITHUB_USER" ]]; then
     print_warning "GITHUB_USER environment variable is not set!"
@@ -188,11 +395,14 @@ while true; do
         "Create/switch branch" \
         "Set remote (via token)" \
         "Show status" \
+        "Contributor Statistics" \
+        "Git graph" \
         "Remove files/folders (rm)" \
         "Merge branches" \
         "Uninitialize repo" \
+        "Revert commit(s)" \
         "Exit" \
-        | fzf --prompt="Choose your spell: " --height=16 --border --ansi)
+        | fzf --prompt="Choose your spell: " --height=19 --border --ansi)
 
     echo
 
@@ -347,7 +557,7 @@ while true; do
            print_warning "This will completely uninitialize the Git repository in this folder."
             echo "This action will delete the .git directory and cannot be undone!"
             echo
-            read -p "Are you sure you want to continue? (yes/no): " confirm_uninit
+            read -r -p "Are you sure you want to continue? (yes/no): " confirm_uninit
 
             if [[ "$confirm_uninit" == "yes" ]]; then
                 if [ -d ".git" ]; then
@@ -387,12 +597,67 @@ while true; do
                 fi
             fi
             ;;
+        "Contributor Statistics")
+            show_contributor_stats
+            ;;
+
+        "Revert commit(s)")
+            print_status "Fetching commit history..."
+            echo
+
+            # Show commits as "<hash> <message>" but keep hash separately
+            commits=$(git log --oneline --decorate \
+                | fzf --multi --ansi --height=20 --border \
+                --prompt="Select commit(s) to revert: " \
+                --header="Use TAB to select multiple commits" \
+                | awk '{print $1}')
+
+            if [[ -z "$commits" ]]; then
+                print_warning "No commit selected. Revert cancelled."
+                continue
+            fi
+
+            echo "You selected:"
+            echo "$commits"
+            echo
+            read -p "Confirm revert? (y/N): " -r confirm
+
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                for c in $commits; do
+                    echo "Reverting commit $c..."
+                    if git revert --no-edit "$c"; then
+                        print_status "Commit $c reverted."
+                    else
+                        print_error "Conflict occurred while reverting $c!"
+                        echo "Please resolve conflicts, then run:"
+                        echo "  git revert --continue"
+                        break
+                    fi
+                done
+            else
+                print_status "Revert cancelled."
+            fi
+            ;;
+
+        "Git graph")
+            color=${YELLOW}
+            line1="Git graph"
+            line2="[INFO] press 'q' to exit"
+
+            echo -e "${color}╭$(printf '─%.0s' $(seq 1 30))╮${NC}"
+            printf "${color}│${NC} %-*s ${color}│${NC}\n" 28 "$line1"
+            printf "${color}│${NC} %-*s ${color}│${NC}\n" 28 "$line2"
+            echo -e "${color}╰$(printf '─%.0s' $(seq 1 30))╯${NC}"
+
+            sleep 2
+            pretty_git_log
+            ;;
+
         *)
             print_error "Invalid choice! Try again."
             echo "Git Wizard vanishes in a puff of smoke..."
             break
             ;;
     esac
-
     echo
 done
