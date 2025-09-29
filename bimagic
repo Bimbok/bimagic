@@ -389,6 +389,7 @@ while true; do
         "Merge branches" \
         "Uninitialize repo" \
         "Contributor Statistics" \
+        "Revert commit(s)" \
         "Exit" \
         | fzf --prompt="Choose your spell: " --height=17 --border --ansi)
 
@@ -588,6 +589,46 @@ while true; do
         "Contributor Statistics")
             show_contributor_stats
             ;;
+
+"Revert commit(s)")
+    print_status "Fetching commit history..."
+    echo
+
+    # Show commits as "<hash> <message>" but keep hash separately
+    commits=$(git log --oneline --decorate \
+        | fzf --multi --ansi --height=20 --border \
+        --prompt="Select commit(s) to revert: " \
+        --header="Use TAB to select multiple commits" \
+        | awk '{print $1}')
+
+    if [[ -z "$commits" ]]; then
+        print_warning "No commit selected. Revert cancelled."
+        continue
+    fi
+
+    echo "You selected:"
+    echo "$commits"
+    echo
+    read -p "Confirm revert? (y/N): " -r confirm
+
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        for c in $commits; do
+            echo "Reverting commit $c..."
+            if git revert --no-edit "$c"; then
+                print_status "Commit $c reverted."
+            else
+                print_error "Conflict occurred while reverting $c!"
+                echo "Please resolve conflicts, then run:"
+                echo "  git revert --continue"
+                break
+            fi
+        done
+    else
+        print_status "Revert cancelled."
+    fi
+    ;;
+
+
         *)
             print_error "Invalid choice! Try again."
             echo "Git Wizard vanishes in a puff of smoke..."
