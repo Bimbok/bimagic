@@ -9,6 +9,7 @@ A powerful Bash-based Git automation tool that simplifies your GitHub workflow w
 Bimagic is an interactive command-line tool that streamlines common Git operations, making version control more accessible through a user-friendly menu interface. It handles repository initialization, committing, branching, and remote operations with GitHub integration using personal access tokens.
 
 ## Sample
+
 https://github.com/user-attachments/assets/36d09f38-fe48-4476-8b08-f592222224a9
 
 ## Features
@@ -36,19 +37,79 @@ Run this one-line command to install Bimagic:
 curl -sSL https://raw.githubusercontent.com/Bimbok/bimagic/main/install.sh | bash
 ```
 
+### Neovim Integration
+
+You can use Bimagic directly inside Neovim! This integration wraps the CLI tool in a floating terminal window using `toggleterm.nvim` for a seamless workflow.
+
+#### LazyVim / Toggleterm Setup
+
+Create a new plugin file (e.g., `~/.config/nvim/lua/plugins/bimagic.lua`) with the following configuration. This sets up a `<leader>gm` keybinding to launch the wizard in a floating popup.
+
+```lua
+return {
+  {
+    "akinsho/toggleterm.nvim",
+    opts = function(_, opts)
+      -- Ensure toggleterm is set up (usually handled by LazyVim, but safe to extend)
+      opts.size = 20
+      opts.open_mapping = [[<c-\>]]
+    end,
+    keys = {
+      {
+        "<leader>gm",
+        function()
+          -- 1. Define the custom terminal
+          local Terminal = require("toggleterm.terminal").Terminal
+          local bimagic = Terminal:new({
+            cmd = "bimagic", -- This assumes 'bimagic' is in your global PATH
+            hidden = true,
+            direction = "float",
+            float_opts = {
+              border = "curved", -- 'single', 'double', 'shadow', 'curved'
+              width = 100,
+              height = 25,
+              title = " 🧙 Bimagic Git Wizard ",
+            },
+            -- 2. Close the window when the script exits
+            close_on_exit = true,
+
+            -- Optional: Run logic when opening/closing
+            on_open = function(term)
+              -- Force insert mode so you can navigate the gum menu immediately
+              vim.cmd("startinsert!")
+
+              -- Add a local keymap to close it with 'q' or 'Esc' if needed
+              -- (Though bimagic has its own Exit option, which is cleaner)
+              vim.api.nvim_buf_set_keymap(term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
+            end,
+          })
+
+          -- 3. Toggle the terminal
+          bimagic:toggle()
+        end,
+        desc = "Bimagic (Git Wizard)",
+      },
+    },
+  },
+}
+```
+
 ### Manual Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/Bimbok/bimagic.git
 ```
 
 2. Make the script executable:
+
 ```bash
 chmod +x bimagic/bimagic
 ```
 
 3. Move it to your bin directory:
+
 ```bash
 # Option 1: For user-local installation (no sudo required)
 mkdir -p ~/bin
@@ -59,6 +120,7 @@ sudo mv bimagic/bimagic /usr/local/bin/
 ```
 
 4. Ensure the bin directory is in your PATH (add to ~/.bashrc or ~/.zshrc if needed):
+
 ```bash
 export PATH="$HOME/bin:$PATH"  # For user-local installation
 ```
@@ -76,6 +138,7 @@ export PATH="$HOME/bin:$PATH"  # For user-local installation
 Bimagic requires your GitHub username and a personal access token. Add these to your shell configuration file:
 
 1. Open your shell configuration file:
+
 ```bash
 # For bash users
 nano ~/.bashrc
@@ -85,6 +148,7 @@ nano ~/.zshrc
 ```
 
 2. Add these lines at the end of the file:
+
 ```bash
 # GitHub credentials for bimagic
 export GITHUB_USER="your_github_username"
@@ -92,6 +156,7 @@ export GITHUB_TOKEN="your_github_personal_access_token"
 ```
 
 3. Reload your shell configuration:
+
 ```bash
 source ~/.bashrc  # or source ~/.zshrc
 ```
@@ -118,6 +183,7 @@ You'll be presented with an interactive menu where you can choose from various G
 ### Status Dashboard
 
 At the top of the interface, a status box summarizes:
+
 - Current `GITHUB_USER` and branch
 - Ahead/behind counts relative to upstream (if set)
 - Working tree state: clean, uncommitted, or conflicts
@@ -127,10 +193,10 @@ At the top of the interface, a status box summarizes:
 1. **Init new repo** - Initialize a new Git repository (auto-renames master → main)
 2. **Add files** - Stage files (interactive multi-select; includes [ALL])
 3. **Commit changes** - Commit staged changes with a message
-4. **Push to remote** - Push changes (auto-sets remote with token if missing)
+4. **Push to remote** - Push changes (handles multiple remotes and auto-configuration)
 5. **Pull latest changes** - Fetch and merge changes from remote
 6. **Create/switch branch** - Create a new branch or switch to an existing one
-7. **Set remote (via token)** - Set the remote URL using `GITHUB_USER`/`GITHUB_TOKEN`
+7. **Set remote** - Configure remotes (supports HTTPS with token or SSH)
 8. **Show status** - Display repo status dashboard (ahead/behind, branch, cleanliness)
 9. **Contributor Statistics** - View per-author activity with time range selection
 10. **Git graph** - Pretty git log with graph and decorations
@@ -145,6 +211,7 @@ At the top of the interface, a status box summarizes:
 Analyze contributions over a chosen time range (Last 7/30/90 days, Last year, All time). The tool parses `git log --numstat` to compute per-author lines changed and commit counts, and surfaces highlights like most active/productive contributors.
 
 #### What you get:
+
 - Per-author bar visualization and percentages
 - Lines changed and commit counts
 - Highlights: most active and most productive
@@ -155,15 +222,17 @@ Displays a pretty, colorized `git log --graph` with abbrev commit, decorations, 
 
 ### File Removal (Option 11)
 
-The `Remove files/folders (rm)` option lets you select files and folders interactively using fzf, with full git integration:
+The `Remove files/folders (rm)` option lets you select files and folders interactively, with full git integration:
 
 #### Features:
+
 - **Interactive Multi-select**: Select one or many files to remove
 - **Git Integration**: Tracked files are removed via `git rm -rf`; untracked via `rm -rf`
 - **Safety Confirmation**: Explicit confirmation before deletion
 - **Smart Detection**: Works whether or not a file is tracked in git
 
 #### How it works:
+
 1. A list of tracked and untracked files is displayed
 2. Use the interactive filter to multi-select entries (TAB to select, ENTER to confirm)
 3. The selection is previewed and you are asked to confirm (y/N)
@@ -175,6 +244,7 @@ The `Remove files/folders (rm)` option lets you select files and folders interac
 Merge another branch into your current branch using an interactive selector. If conflicts occur, you will be notified to resolve them manually.
 
 #### Flow:
+
 1. Current branch is shown
 2. Select a branch (other than current) to merge into the current one
 3. If merge succeeds, you get a success message; otherwise, conflicts are reported
@@ -182,13 +252,15 @@ Merge another branch into your current branch using an interactive selector. If 
 ### Revert commit(s) (Option 14)
 
 #### Safety Features:
+
 - **Double confirmation** for `*` (everything) - requires typing "yes"
 - **Preview** of what will be deleted before proceeding
 - **Existence check** - only proceeds if files actually exist
 - **Git-aware** - uses `git rm` for tracked files, regular `rm` for untracked files
-Revert one or more commits selected via interactive filter from `git log --oneline`. Each selected commit is reverted in sequence; on conflicts, the process stops and you are instructed to resolve and continue.
+  Revert one or more commits selected via interactive filter from `git log --oneline`. Each selected commit is reverted in sequence; on conflicts, the process stops and you are instructed to resolve and continue.
 
 #### Flow:
+
 1. Select commit(s) to revert (multi-select)
 2. Confirm the action (y/N)
 3. Reverts run with `git revert --no-edit`
@@ -200,7 +272,7 @@ Revert one or more commits selected via interactive filter from `git log --oneli
 
 The installation script may request sudo privileges for these reasons:
 
-1. **System-wide installation**: 
+1. **System-wide installation**:
    - The script tries to install to `/usr/local/bin/` by default
    - This directory is typically owned by root for security reasons
    - Writing to system directories requires administrative privileges
@@ -214,11 +286,13 @@ The installation script may request sudo privileges for these reasons:
 You can avoid needing sudo by:
 
 1. Creating a local bin directory:
+
    ```bash
    mkdir -p ~/bin
    ```
 
 2. Ensuring it's in your PATH (add to ~/.bashrc or ~/.zshrc):
+
    ```bash
    export PATH="$HOME/bin:$PATH"
    ```
@@ -284,26 +358,30 @@ curl -sSL https://raw.githubusercontent.com/Bimbok/bimagic/main/uninstall.sh | b
 ### Option 2: Manual Uninstallation
 
 1. Remove the Bimagic script:
+
    ```bash
    # Remove from user directory (if installed there)
    rm -f ~/bin/bimagic
-   
+
    # Remove from system directory (if installed there - requires sudo)
    sudo rm -f /usr/local/bin/bimagic
    ```
 
 2. Optional: Remove GitHub credentials from your shell configuration:
-   ```bash
+
+   ````bash
    # Edit your shell config file (e.g., ~/.bashrc, ~/.zshrc)
    # Remove lines containing GITHUB_USER and GITHUB_TOKEN
    nano ~/.bashrc  # or ~/.zshrc
    ```### What the Uninstall Script Does
 
-1. **Finds Installations**: Checks common installation directories (~/bin and /usr/local/bin)
-2. **Confirmation**: Asks for confirmation before proceeding
-3. **Removes Bimagic**: Deletes the script from all found locations
-4. **Optional Cleanup**: Offers to remove GitHub environment variables from shell configuration files
-5. **Creates Backups**: Creates timestamped backups of modified shell configuration files
+   ````
+
+3. **Finds Installations**: Checks common installation directories (~/bin and /usr/local/bin)
+4. **Confirmation**: Asks for confirmation before proceeding
+5. **Removes Bimagic**: Deletes the script from all found locations
+6. **Optional Cleanup**: Offers to remove GitHub environment variables from shell configuration files
+7. **Creates Backups**: Creates timestamped backups of modified shell configuration files
 
 ### Safety Features
 
@@ -337,6 +415,3 @@ This tool is provided as-is without any warranties. Use it at your own risk. Alw
 ---
 
 **Enjoy the magical Git experience!** ✨
-
-
-
