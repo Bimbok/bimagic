@@ -94,7 +94,7 @@ show_branches() {
 # Function to setup or update a remote
 setup_remote() {
   local remote_name=${1:-"origin"}
-  
+
   if ! git rev-parse --git-dir >/dev/null 2>&1; then
     print_error "Not a git repository! Initialize it first."
     return 1
@@ -370,11 +370,112 @@ while true; do
     " Merge branches" \
     " Uninitialize repo" \
     "󰁯 Revert commit(s)" \
+    " Stash operations" \
     "󰿅 Exit")
 
   echo
 
   case "$choice" in
+  " Stash operations")
+    while true; do
+      stash_choice=$(gum choose --header "Stash Operations" \
+        "󱉛 Push (Save) changes" \
+        "󱉙 Pop latest stash" \
+        " List stashes" \
+        " Apply specific stash" \
+        " Drop specific stash" \
+        "󰎟 Clear all stashes" \
+        "󰌍 Back")
+
+      case "$stash_choice" in
+      "󱉛 Push (Save) changes")
+        msg=$(gum input --placeholder "Optional stash message")
+        # Ask about untracked files
+        if gum confirm "Include untracked files?"; then
+          include_untracked="-u"
+        else
+          include_untracked=""
+        fi
+
+        if git stash push $include_untracked -m "$msg"; then
+          print_status "Changes stashed successfully!"
+        else
+          print_error "Failed to stash changes."
+        fi
+        ;;
+      "󱉙 Pop latest stash")
+        if git stash pop; then
+          print_status "Stash popped successfully!"
+        else
+          print_error "Failed to pop stash (possible conflicts)."
+        fi
+        ;;
+      " List stashes")
+        if [[ -z "$(git stash list)" ]]; then
+          print_warning "No stashes found."
+        else
+          git stash list | gum style --border normal --padding "0 1"
+        fi
+        ;;
+      " Apply specific stash")
+        if [[ -z "$(git stash list)" ]]; then
+          print_warning "No stashes found."
+          continue
+        fi
+
+        stash_entry=$(git stash list | gum filter --placeholder "Select stash to apply")
+        if [[ -n "$stash_entry" ]]; then
+          stash_id=$(echo "$stash_entry" | cut -d: -f1)
+          if git stash apply "$stash_id"; then
+            print_status "Applied $stash_id"
+          else
+            print_error "Failed to apply $stash_id"
+          fi
+        fi
+        ;;
+      " Drop specific stash")
+        if [[ -z "$(git stash list)" ]]; then
+          print_warning "No stashes found."
+          continue
+        fi
+
+        stash_entry=$(git stash list | gum filter --placeholder "Select stash to drop")
+        if [[ -n "$stash_entry" ]]; then
+          stash_id=$(echo "$stash_entry" | cut -d: -f1)
+          if gum confirm "Are you sure you want to drop $stash_id?"; then
+            if git stash drop "$stash_id"; then
+              print_status "Dropped $stash_id"
+            else
+              print_error "Failed to drop $stash_id"
+            fi
+          fi
+        fi
+        ;;
+      "󰎟 Clear all stashes")
+        if [[ -z "$(git stash list)" ]]; then
+          print_warning "No stashes found."
+          continue
+        fi
+
+        if gum confirm "DANGER: This will delete ALL stashes. Continue?"; then
+          if git stash clear; then
+            print_status "All stashes cleared."
+          else
+            print_error "Failed to clear stashes."
+          fi
+        else
+          print_status "Operation cancelled."
+        fi
+        ;;
+      "󰌍 Back")
+        break
+        ;;
+      esac
+      echo
+      gum style --foreground 240 "Press Enter to continue..."
+      read -r
+    done
+    ;;
   " Init new repo")
     dirname=$(gum input --placeholder "Enter repo directory name (or '.' for current dir)")
     if [[ -z "$dirname" ]]; then
