@@ -1,11 +1,10 @@
 #!/bin/bash
 
 # Ensure gum is installed
-if ! command -v gum &> /dev/null;
-then
-  echo "Error: gum is not installed."
-  echo "Please install it: https://github.com/charmbracelet/gum"
-  exit 1
+if ! command -v gum &>/dev/null; then
+    echo "Error: gum is not installed."
+    echo "Please install it: https://github.com/charmbracelet/gum"
+    exit 1
 fi
 
 echo "Welcome to the Git Wizard! Let's work some magic..."
@@ -22,188 +21,188 @@ NC='\033[0m' # No Color
 
 # Sound functions
 play_sound() {
-  local sound_type=$1
-  case "$sound_type" in
-  "success")
-    # Pleasant bell sound
-    echo -e "\a" # System bell
-    # Alternative: play a beep sequence
-    for i in {1..2}; do
-      printf "\a"
-      sleep 0.1
-    done
-    ;; 
-  "error")
-    # Harsher error sound
-    for i in {1..3}; do
-      printf "\a"
-      sleep 0.05
-    done
-    ;; 
-  "warning")
-    # Single warning beep
-    printf "\a"
-    ;; 
-  "magic")
-    # Magical sequence for special operations
-    for i in {1..3}; do
-      printf "\a"
-      sleep 0.2
-    done
-    ;; 
-  "progress")
-    # Subtle progress indicator
-    printf "\a"
-    ;; 
-  esac
+    local sound_type=$1
+    case "$sound_type" in
+    "success")
+        # Pleasant bell sound
+        echo -e "\a" # System bell
+        # Alternative: play a beep sequence
+        for i in {1..2}; do
+            printf "\a"
+            sleep 0.1
+        done
+        ;;
+    "error")
+        # Harsher error sound
+        for i in {1..3}; do
+            printf "\a"
+            sleep 0.05
+        done
+        ;;
+    "warning")
+        # Single warning beep
+        printf "\a"
+        ;;
+    "magic")
+        # Magical sequence for special operations
+        for i in {1..3}; do
+            printf "\a"
+            sleep 0.2
+        done
+        ;;
+    "progress")
+        # Subtle progress indicator
+        printf "\a"
+        ;;
+    esac
 }
 print_status() {
-  gum style --foreground 212 "$1"
-  play_sound "success"
+    gum style --foreground 212 "$1"
+    play_sound "success"
 }
 
 print_error() {
-  gum style --foreground 196 "$1"
-  play_sound "error"
+    gum style --foreground 196 "$1"
+    play_sound "error"
 }
 
 print_warning() {
-  gum style --foreground 214 "$1"
-  play_sound "warning"
+    gum style --foreground 214 "$1"
+    play_sound "warning"
 }
 
 # Function to get current branch with color
 get_current_branch() {
-  git branch --show-current 2>/dev/null || echo "main"
+    git branch --show-current 2>/dev/null || echo "main"
 }
 
 # Function to display branches with gum
 show_branches() {
-  local current_branch=$(get_current_branch)
+    local current_branch=$(get_current_branch)
 
-  # Get all branches and highlight current one
-  git branch -a --format='%(refname:short)' |
-    while read -r branch; do
-      if [[ "$branch" == "$current_branch" ]]; then
-        echo -e "${GREEN}➤ $branch${NC} (current)"
-      else
-        echo "  $branch"
-      fi
-    done | sort -u
+    # Get all branches and highlight current one
+    git branch -a --format='%(refname:short)' |
+        while read -r branch; do
+            if [[ "$branch" == "$current_branch" ]]; then
+                echo -e "${GREEN}➤ $branch${NC} (current)"
+            else
+                echo "  $branch"
+            fi
+        done | sort -u
 }
 
 show_repo_status() {
-  if ! git rev-parse --git-dir >/dev/null 2>&1; then
-    print_warning "Not inside a git repository!"
-    return
-  fi
-
-  local branch=$(get_current_branch)
-
-  # Ahead/behind info
-  local upstream=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
-  local ahead behind
-  if [[ -n "$upstream" ]]; then
-    ahead=$(git rev-list --count "$upstream"..HEAD 2>/dev/null)
-    behind=$(git rev-list --count HEAD.."$upstream" 2>/dev/null)
-  else
-    ahead=0
-    behind=0
-  fi
-
-  # Working tree status
-  local status
-  if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
-    if git ls-files -u | grep -q .; then
-      status="🔴 conflicts"
-      color="196" # Red
-    else
-      status="🟢 clean"
-      color="46" # Green
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        print_warning "Not inside a git repository!"
+        return
     fi
-  else
-    status="🟡 uncommitted"
-    color="226" # Yellow
-  fi
 
-  local display_user=${GITHUB_USER:-"SSH/Local"}
-  local content="GITHUB USER: $display_user
+    local branch=$(get_current_branch)
+
+    # Ahead/behind info
+    local upstream=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
+    local ahead behind
+    if [[ -n "$upstream" ]]; then
+        ahead=$(git rev-list --count "$upstream"..HEAD 2>/dev/null)
+        behind=$(git rev-list --count HEAD.."$upstream" 2>/dev/null)
+    else
+        ahead=0
+        behind=0
+    fi
+
+    # Working tree status
+    local status
+    if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+        if git ls-files -u | grep -q .; then
+            status="🔴 conflicts"
+            color="196" # Red
+        else
+            status="🟢 clean"
+            color="46" # Green
+        fi
+    else
+        status="🟡 uncommitted"
+        color="226" # Yellow
+    fi
+
+    local display_user=${GITHUB_USER:-"SSH/Local"}
+    local content="GITHUB USER: $display_user
 BRANCH: $branch
 AHEAD: $ahead | BEHIND: $behind
 STATUS: $status"
 
-  echo
-  gum style \
-    --border normal \
-    --margin "1 0" \
-    --padding "1 2" \
-    --border-foreground "$color" \
-    "$content"
+    echo
+    gum style \
+        --border normal \
+        --margin "1 0" \
+        --padding "1 2" \
+        --border-foreground "$color" \
+        "$content"
 }
 
 generate_bar() {
-  local percentage=$1
-  local bar=""
-  # Convert float to integer for bar calculation
-  local int_percentage=${percentage%.*}
-  local bars=$((int_percentage / 2)) # Each █ represents 2%
+    local percentage=$1
+    local bar=""
+    # Convert float to integer for bar calculation
+    local int_percentage=${percentage%.*}
+    local bars=$((int_percentage / 2)) # Each █ represents 2%
 
-  for ((i = 0; i < bars; i++)); do
-    bar+="█"
-  done
-  echo "$bar"
+    for ((i = 0; i < bars; i++)); do
+        bar+="█"
+    done
+    echo "$bar"
 }
 
 # Function to get contributor statistics
 show_contributor_stats() {
-  if ! git rev-parse --git-dir >/dev/null 2>&1; then
-    print_error "Not a git repository!"
-    return 1
-  fi
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        print_error "Not a git repository!"
+        return 1
+    fi
 
-  # Time range selection
-  local time_range=$(gum choose --header "Select time range" \
-    "Last 7 days" \
-    "Last 30 days" \
-    "Last 90 days" \
-    "Last year" \
-    "All time")
+    # Time range selection
+    local time_range=$(gum choose --header "Select time range" \
+        "Last 7 days" \
+        "Last 30 days" \
+        "Last 90 days" \
+        "Last year" \
+        "All time")
 
-  local since=""
-  case "$time_range" in
-  "Last 7 days") since="--since='7 days ago'" ;; 
-  "Last 30 days") since="--since='30 days ago'" ;; 
-  "Last 90 days") since="--since='3 months ago'" ;; 
-  "Last year") since="--since='1 year ago'" ;; 
-  "All time") since="" ;; 
-  *)
-    print_warning "No time range selected."
-    return 1
-    ;; 
-  esac
+    local since=""
+    case "$time_range" in
+    "Last 7 days") since="--since='7 days ago'" ;;
+    "Last 30 days") since="--since='30 days ago'" ;;
+    "Last 90 days") since="--since='3 months ago'" ;;
+    "Last year") since="--since='1 year ago'" ;;
+    "All time") since="" ;;
+    *)
+        print_warning "No time range selected."
+        return 1
+        ;;
+    esac
 
-  print_status "Analyzing contributions ($time_range)..."
-  echo
+    print_status "Analyzing contributions ($time_range)..."
+    echo
 
-  # Temporary file for processing
-  local temp_file=$(mktemp)
+    # Temporary file for processing
+    local temp_file=$(mktemp)
 
-  # Get git log with numstat and format for processing
-  if [[ -n "$since" ]]; then
-    gum spin --title "Analyzing log..." -- bash -c "git log --pretty=format:'%aN' --numstat $since > $temp_file 2>/dev/null"
-  else
-    gum spin --title "Analyzing log..." -- bash -c "git log --pretty=format:'%aN' --numstat > $temp_file 2>/dev/null"
-  fi
+    # Get git log with numstat and format for processing
+    if [[ -n "$since" ]]; then
+        gum spin --title "Analyzing log..." -- bash -c "git log --pretty=format:'%aN' --numstat $since > $temp_file 2>/dev/null"
+    else
+        gum spin --title "Analyzing log..." -- bash -c "git log --pretty=format:'%aN' --numstat > $temp_file 2>/dev/null"
+    fi
 
-  # Check if we got any data
-  if [[ ! -s "$temp_file" ]]; then
-    print_error "No contribution data found for the selected period."
-    rm -f "$temp_file"
-    return 1
-  fi
+    # Check if we got any data
+    if [[ ! -s "$temp_file" ]]; then
+        print_error "No contribution data found for the selected period."
+        rm -f "$temp_file"
+        return 1
+    fi
 
-  # Process the data with awk
-  local stats=$(awk ' 
+    # Process the data with awk
+    local stats=$(awk ' 
     BEGIN {
         total_lines = 0
     }
@@ -236,446 +235,447 @@ show_contributor_stats() {
         }
     }' "$temp_file" | sort -t'|' -k2 -nr)
 
-  rm -f "$temp_file"
+    rm -f "$temp_file"
 
-  if [[ -z "$stats" ]]; then
-    print_error "No contribution data found for the selected period."
-    return 1
-  fi
-
-  # Calculate additional metrics
-  local most_active_author=""
-  local most_commits=0
-  local most_productive_author=""
-  local highest_avg=0
-
-  # Display header
-  echo -e "${PURPLE}Contribution Report ($time_range)${NC}"
-  echo "$(printf '─%.0s' $(seq 1 45))"
-
-  # Display each contributor
-  while IFS='|' read -r author lines commits percentage; do
-    # Clean up author name
-    author=$(echo "$author" | sed 's/^ *//;s/ *$//')
-
-    # Generate bar (max 50 characters for 100%)
-    local bar=$(generate_bar "$percentage")
-
-    printf "% -15s %-25s %5.1f%% (%d lines)\n" \
-      "$author" "$bar" "$percentage" "$lines"
-
-    # Track most active (most commits)
-    if [[ $commits -gt $most_commits ]]; then
-      most_commits=$commits
-      most_active_author="$author"
+    if [[ -z "$stats" ]]; then
+        print_error "No contribution data found for the selected period."
+        return 1
     fi
 
-    # Track most productive (highest average lines per commit)
-    if [[ $commits -gt 0 ]]; then
-      local avg_lines=$((lines / commits))
-      if [[ $avg_lines -gt $highest_avg ]]; then
-        highest_avg=$avg_lines
-        most_productive_author="$author"
-      fi
+    # Calculate additional metrics
+    local most_active_author=""
+    local most_commits=0
+    local most_productive_author=""
+    local highest_avg=0
+
+    # Display header
+    echo -e "${PURPLE}Contribution Report ($time_range)${NC}"
+    echo "$(printf '─%.0s' $(seq 1 45))"
+
+    # Display each contributor
+    while IFS='|' read -r author lines commits percentage; do
+        # Clean up author name
+        author=$(echo "$author" | sed 's/^ *//;s/ *$//')
+
+        # Generate bar (max 50 characters for 100%)
+        local bar=$(generate_bar "$percentage")
+
+        printf "% -15s %-25s %5.1f%% (%d lines)\n" \
+            "$author" "$bar" "$percentage" "$lines"
+
+        # Track most active (most commits)
+        if [[ $commits -gt $most_commits ]]; then
+            most_commits=$commits
+            most_active_author="$author"
+        fi
+
+        # Track most productive (highest average lines per commit)
+        if [[ $commits -gt 0 ]]; then
+            local avg_lines=$((lines / commits))
+            if [[ $avg_lines -gt $highest_avg ]]; then
+                highest_avg=$avg_lines
+                most_productive_author="$author"
+            fi
+        fi
+
+    done <<<"$stats"
+
+    echo
+    echo -e "${CYAN}Highlights:${NC}"
+    if [[ -n "$most_active_author" ]]; then
+        echo -e "${BLUE}Most Active:${NC} $most_active_author ($most_commits commits)"
+    fi
+    if [[ -n "$most_productive_author" ]]; then
+        echo -e "${BLUE}Most Productive:${NC} $most_productive_author ($highest_avg lines/commit)"
     fi
 
-  done <<<"$stats"
-
-  echo
-  echo -e "${CYAN}Highlights:${NC}"
-  if [[ -n "$most_active_author" ]]; then
-    echo -e "${BLUE}Most Active:${NC} $most_active_author ($most_commits commits)"
-  fi
-  if [[ -n "$most_productive_author" ]]; then
-    echo -e "${BLUE}Most Productive:${NC} $most_productive_author ($highest_avg lines/commit)"
-  fi
-
-  local total_contributors=$(echo "$stats" | wc -l)
-  echo -e "${BLUE}Total Contributors:${NC} $total_contributors"
+    local total_contributors=$(echo "$stats" | wc -l)
+    echo -e "${BLUE}Total Contributors:${NC} $total_contributors"
 }
 #function to display git graph
 pretty_git_log() {
-  git log --graph \
-    --abbrev-commit \
-    --decorate \
-    --date=short \
-    --format="%C(auto)%h%Creset %C(blue)%ad%Creset %C(green)%an%Creset %C(yellow)%d%Creset %Creset%s" \
-    --all
+    git log --graph \
+        --abbrev-commit \
+        --decorate \
+        --date=short \
+        --format="%C(auto)%h%Creset %C(blue)%ad%Creset %C(green)%an%Creset %C(yellow)%d%Creset %Creset%s" \
+        --all
 }
 
 # Check if environment variables are set (optional for SSH)
 if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
-  print_warning "GITHUB_USER or GITHUB_TOKEN not set. Defaulting to SSH/Local mode."
+    print_warning "GITHUB_USER or GITHUB_TOKEN not set. Defaulting to SSH/Local mode."
 fi
 
 while true; do
-  clear
-  show_repo_status # <-- shows the status dashboard at the top
+    clear
+    show_repo_status # <-- shows the status dashboard at the top
 
-  # gum menu
-  choice=$(gum choose --header "Choose your spell:" \
-    "Init new repo" \
-    "Add files" \
-    "Commit changes" \
-    "Push to remote" \
-    "Pull latest changes" \
-    "Create/switch branch" \
-    "Set remote" \
-    "Show status" \
-    "Contributor Statistics" \
-    "Git graph" \
-    "Remove files/folders (rm)" \
-    "Merge branches" \
-    "Uninitialize repo" \
-    "Revert commit(s)" \
-    "Exit")
+    # gum menu
+    choice=$(gum choose --header "Choose your spell:" \
+        " Init new repo" \
+        " Add files" \
+        " Commit changes" \
+        " Push to remote" \
+        " Pull latest changes" \
+        " Create/switch branch" \
+        " Set remote" \
+        "󱖫 Show status" \
+        " Contributor Statistics" \
+        " Git graph" \
+        "󰮘 Remove files/folders (rm)" \
+        " Merge branches" \
+        " Uninitialize repo" \
+        "󰁯 Revert commit(s)" \
+        "󰿅 Exit")
 
-  echo
+    echo
 
-  case "$choice" in
-  "Init new repo")
-    dirname=$(gum input --placeholder "Enter repo directory name (or '.' for current dir)")
-    if [[ -z "$dirname" ]]; then
-      print_warning "Operation cancelled."
-      continue
-    fi
-    
-    if [[ "$dirname" == "." ]]; then
-      git init
-      print_status "Repo initialized in current directory: $(pwd)"
-    else
-      mkdir -p "$dirname" && cd "$dirname" || exit
-      git init
-      print_status "Repo initialized in new directory: $dirname"
-      cd - >/dev/null 2>&1 || exit
-    fi
-
-    current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
-    if [[ "$current_branch" == "master" ]]; then
-      git branch -M main
-      print_status "Default branch renamed from 'master' to 'main'"
-    fi
-    ;; 
-  "Add files")
-    # Show untracked + modified files, plus an [ALL] option
-    files=$( (
-      echo "[ALL]"
-      git ls-files --others --modified --exclude-standard
-    ) | gum filter --no-limit --placeholder "Select files to add")
-
-    if [[ -z "$files" ]]; then
-      print_warning "No files selected."
-    else
-      # gum filter returns selected items separated by newlines.
-      # We need to handle the case where [ALL] is selected along with other files.
-      if echo "$files" | grep -q "\[ALL\]"; then
-        git add .
-        print_status "All files staged."
-      else
-        # Use xargs to pass the file list to git add. This handles filenames with spaces.
-        echo "$files" | xargs git add
-        print_status "Files staged."
-        # Optionally, list the files that were staged
-        echo "$files"
-      fi
-    fi
-    ;; 
-  "Commit changes")
-    msg=$(gum input --placeholder "Enter commit message")
-    if [[ -z "$msg" ]]; then
-      print_warning "No commit message provided. Cancelled."
-      continue
-    fi
-    
-    if gum confirm "Commit changes?"; then
-      git commit -m "$msg"
-      print_status "Commit done!"
-    else
-      print_status "Commit cancelled."
-    fi
-    ;; 
-  "Push to remote")
-    branch=$(git symbolic-ref --short HEAD 2>/dev/null)
-    branch=${branch:-main}
-
-    remote=$(git remote 2>/dev/null)
-    if [[ -z "$remote" ]]; then
-      print_error "No remote set!"
-
-      # Ask for protocol
-      protocol=$(gum choose "HTTPS (Token)" "SSH")
-
-      if [[ "$protocol" == "HTTPS (Token)" ]]; then
-        if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
-          print_error "GITHUB_USER and GITHUB_TOKEN required for HTTPS!"
-          continue
-        fi
-        reponame=$(gum input --placeholder "Enter repo name (example: my-repo.git)")
-        remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
-      elif [[ "$protocol" == "SSH" ]]; then
-        remote_url=$(gum input --placeholder "Enter SSH URL (e.g., git@github.com:user/repo.git)")
-      else
-        print_warning "No protocol selected."
-        continue
-      fi
-
-      if [[ -n "$remote_url" ]]; then
-        if gum confirm "Set remote to $remote_url?"; then
-            git remote add origin "$remote_url"
-            print_status "🔗 Remote 'origin' set to $remote_url"
-            remote="origin"
-        else
-            print_warning "Remote configuration cancelled."
+    case "$choice" in
+    " Init new repo")
+        dirname=$(gum input --placeholder "Enter repo directory name (or '.' for current dir)")
+        if [[ -z "$dirname" ]]; then
+            print_warning "Operation cancelled."
             continue
         fi
-      else
-        print_warning "No URL provided."
-        continue
-      fi
-    fi
 
-    if gum confirm "Push branch '$branch' to '$remote'?"; then
-        echo "Pushing branch '$branch' to '$remote'..."
-        gum spin --title "Pushing..." -- git push -u "$remote" "$branch"
-    else
-        print_status "Push cancelled."
-    fi
-    ;; 
-  "Pull latest changes")
-    branch=$(gum input --value "main" --placeholder "Enter branch to pull")
-    branch=${branch:-main}
+        if [[ "$dirname" == "." ]]; then
+            git init
+            print_status "Repo initialized in current directory: $(pwd)"
+        else
+            mkdir -p "$dirname" && cd "$dirname" || exit
+            git init
+            print_status "Repo initialized in new directory: $dirname"
+            cd - >/dev/null 2>&1 || exit
+        fi
 
-    remote=$(git remote 2>/dev/null)
-    if [[ -z "$remote" ]]; then
-      print_error "No remote set! Cannot pull."
-    else
-      if gum confirm "Pull branch '$branch' from '$remote'?"; then
-          gum spin --title "Pulling..." -- git pull "$remote" "$branch"
-      else
-          print_status "Pull cancelled."
-      fi
-    fi
-    ;; 
-  "Create/switch branch")
-    # Show current branch and all available branches
-    current_branch=$(get_current_branch)
-    print_status "Current branch: $current_branch"
-    echo
-    print_status "Available branches:"
-    show_branches
-    echo
+        current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+        if [[ "$current_branch" == "master" ]]; then
+            git branch -M main
+            print_status "Default branch renamed from 'master' to 'main'"
+        fi
+        ;;
+    " Add files")
+        # Show untracked + modified files, plus an [ALL] option
+        files=$( (
+            echo "[ALL]"
+            git ls-files --others --modified --exclude-standard
+        ) | gum filter --no-limit --placeholder "Select files to add")
 
-    # Let user choose between existing branches or new branch
-    branch_option=$(gum choose "Switch to existing branch" "Create new branch")
+        if [[ -z "$files" ]]; then
+            print_warning "No files selected."
+        else
+            # gum filter returns selected items separated by newlines.
+            # We need to handle the case where [ALL] is selected along with other files.
+            if echo "$files" | grep -q "\[ALL\]"; then
+                git add .
+                print_status "All files staged."
+            else
+                # Use xargs to pass the file list to git add. This handles filenames with spaces.
+                echo "$files" | xargs git add
+                print_status "Files staged."
+                # Optionally, list the files that were staged
+                echo "$files"
+            fi
+        fi
+        ;;
+    " Commit changes")
+        msg=$(gum input --placeholder "Enter commit message")
+        if [[ -z "$msg" ]]; then
+            print_warning "No commit message provided. Cancelled."
+            continue
+        fi
 
-    case "$branch_option" in
-    "Switch to existing branch")
-      # Use gum filter to select from existing branches
-      existing_branch=$(git branch --format='%(refname:short)' | gum filter --placeholder "Select branch to switch to")
-      if [[ -n "$existing_branch" ]]; then
-        git checkout "$existing_branch"
-        print_status "Switched to branch: $existing_branch"
-      else
-        print_warning "No branch selected."
-      fi
-      ;; 
-    "Create new branch")
-      new_branch=$(gum input --placeholder "Enter new branch name")
-      if [[ -n "$new_branch" ]]; then
-        git checkout -b "$new_branch"
-        print_status "Created and switched to new branch: $new_branch"
-      else
-        print_error "No branch name provided."
-      fi
-      ;; 
+        if gum confirm "Commit changes?"; then
+            git commit -m "$msg"
+            print_status "Commit done!"
+        else
+            print_status "Commit cancelled."
+        fi
+        ;;
+    " Push to remote")
+        branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+        branch=${branch:-main}
+
+        remote=$(git remote 2>/dev/null)
+        if [[ -z "$remote" ]]; then
+            print_error "No remote set!"
+
+            # Ask for protocol
+            protocol=$(gum choose "HTTPS (Token)" "SSH")
+
+            if [[ "$protocol" == "HTTPS (Token)" ]]; then
+                if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
+                    print_error "GITHUB_USER and GITHUB_TOKEN required for HTTPS!"
+                    continue
+                fi
+                reponame=$(gum input --placeholder "Enter repo name (example: my-repo.git)")
+                remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
+            elif [[ "$protocol" == "SSH" ]]; then
+                remote_url=$(gum input --placeholder "Enter SSH URL (e.g., git@github.com:user/repo.git)")
+            else
+                print_warning "No protocol selected."
+                continue
+            fi
+
+            if [[ -n "$remote_url" ]]; then
+                if gum confirm "Set remote to $remote_url?"; then
+                    git remote add origin "$remote_url"
+                    print_status "🔗 Remote 'origin' set to $remote_url"
+                    remote="origin"
+                else
+                    print_warning "Remote configuration cancelled."
+                    continue
+                fi
+            else
+                print_warning "No URL provided."
+                continue
+            fi
+        fi
+
+        if gum confirm "Push branch '$branch' to '$remote'?"; then
+            echo "Pushing branch '$branch' to '$remote'..."
+            gum spin --title "Pushing..." -- git push -u "$remote" "$branch"
+        else
+            print_status "Push cancelled."
+        fi
+        ;;
+    " Pull latest changes")
+        branch=$(gum input --value "main" --placeholder "Enter branch to pull")
+        branch=${branch:-main}
+
+        remote=$(git remote 2>/dev/null)
+        if [[ -z "$remote" ]]; then
+            print_error "No remote set! Cannot pull."
+        else
+            if gum confirm "Pull branch '$branch' from '$remote'?"; then
+                gum spin --title "Pulling..." -- git pull "$remote" "$branch"
+            else
+                print_status "Pull cancelled."
+            fi
+        fi
+        ;;
+    " Create/switch branch")
+        # Show current branch and all available branches
+        current_branch=$(get_current_branch)
+        print_status "Current branch: $current_branch"
+        echo
+        print_status "Available branches:"
+        show_branches
+        echo
+
+        # Let user choose between existing branches or new branch
+        branch_option=$(gum choose "Switch to existing branch" "Create new branch")
+
+        case "$branch_option" in
+        "Switch to existing branch")
+            # Use gum filter to select from existing branches
+            existing_branch=$(git branch --format='%(refname:short)' | gum filter --placeholder "Select branch to switch to")
+            if [[ -n "$existing_branch" ]]; then
+                git checkout "$existing_branch"
+                print_status "Switched to branch: $existing_branch"
+            else
+                print_warning "No branch selected."
+            fi
+            ;;
+        "Create new branch")
+            new_branch=$(gum input --placeholder "Enter new branch name")
+            if [[ -n "$new_branch" ]]; then
+                git checkout -b "$new_branch"
+                print_status "Created and switched to new branch: $new_branch"
+            else
+                print_error "No branch name provided."
+            fi
+            ;;
+        *)
+            print_warning "Operation cancelled."
+            ;;
+        esac
+        ;;
+    " Set remote")
+        # Ask for protocol
+        protocol=$(gum choose "HTTPS (Token)" "SSH")
+
+        if [[ "$protocol" == "HTTPS (Token)" ]]; then
+            if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
+                print_error "GITHUB_USER and GITHUB_TOKEN required for HTTPS!"
+                continue
+            fi
+            reponame=$(gum input --placeholder "Enter repo name (example: my-repo.git)")
+            remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
+        elif [[ "$protocol" == "SSH" ]]; then
+            remote_url=$(gum input --placeholder "Enter SSH URL (e.g., git@github.com:user/repo.git)")
+        else
+            print_warning "No protocol selected."
+            continue
+        fi
+
+        if [[ -n "$remote_url" ]]; then
+            if gum confirm "Set remote to $remote_url?"; then
+                git remote remove origin 2>/dev/null
+                git remote add origin "$remote_url"
+                echo "Remote 'origin' set to $remote_url"
+            else
+                print_status "Operation cancelled."
+            fi
+        else
+            print_warning "No URL provided."
+        fi
+        ;;
+    "󱖫 Show status")
+        git status
+        ;;
+    "󰮘 Remove files/folders (rm)")
+        # List tracked + untracked files for removal
+        files=$(git ls-files --cached --others --exclude-standard |
+            gum filter --no-limit --placeholder "Select files/folders to remove")
+
+        if [[ -z "$files" ]]; then
+            print_warning "No files selected."
+            continue # Use continue to go back to the main menu
+        fi
+
+        echo "Files selected for removal:"
+        # Use 'tput' for better visual separation and color
+        tput setaf 3
+        echo "$files"
+        tput sgr0
+        echo
+
+        if gum confirm "Confirm removal? This cannot be undone."; then
+            # Use a 'while read' loop to correctly handle filenames with spaces
+            echo "$files" | while read -r f; do
+                if [[ -z "$f" ]]; then continue; fi # Skip empty lines
+
+                # Check if the file is tracked by git
+                if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+                    # It's a tracked file, use 'git rm'
+                    git rm -rf "$f"
+                else
+                    # It's an untracked file, use 'rm'
+                    rm -rf "$f"
+                fi
+            done
+            print_status "Selected files/folders have been removed."
+        else
+            print_status "Operation cancelled."
+        fi
+        ;;
+    " Uninitialize repo")
+        print_warning "This will completely uninitialize the Git repository in this folder."
+        echo "This action will delete the .git directory and cannot be undone!"
+        echo
+
+        if gum confirm "Are you sure you want to continue?"; then
+            if [ -d ".git" ]; then
+                rm -rf .git
+                print_status "Git repository has been uninitialized."
+            else
+                print_error "No .git directory found here. Nothing to do."
+            fi
+        else
+            print_status "Operation cancelled."
+        fi
+        ;;
+    "󰿅 Exit")
+        if gum confirm "Are you sure you want to exit?"; then
+            echo "Git Wizard vanishes in a puff of smoke..."
+            exit 0
+        else
+            continue
+        fi
+        ;;
+    " Merge branches")
+        current_branch=$(get_current_branch)
+        print_status "You are on branch: $current_branch"
+        echo
+
+        # Pick branch to merge from
+        merge_branch=$(git branch --format='%(refname:short)' |
+            grep -v "^$current_branch$" |
+            gum filter --placeholder "Select branch to merge into $current_branch")
+
+        if [[ -z "$merge_branch" ]]; then
+            print_warning "No branch selected. Merge cancelled."
+        else
+            if gum confirm "Merge branch '$merge_branch' into '$current_branch'?"; then
+                echo "Merging branch '$merge_branch' into '$current_branch'..."
+                if gum spin --title "Merging..." -- git merge "$merge_branch"; then
+                    print_status "Merge successful!"
+                else
+                    print_error "Merge had conflicts! Resolve them manually."
+                fi
+            else
+                print_status "Merge cancelled."
+            fi
+        fi
+        ;;
+    " Contributor Statistics")
+        show_contributor_stats
+        ;;
+
+    "󰁯 Revert commit(s)")
+        print_status "Fetching commit history..."
+        echo
+
+        # Show commits as "<hash> <message>" but keep hash separately
+        commits=$(git log --oneline --decorate |
+            gum filter --no-limit --placeholder "Select commit(s) to revert" |
+            awk '{print $1}')
+
+        if [[ -z "$commits" ]]; then
+            print_warning "No commit selected. Revert cancelled."
+            continue
+        fi
+
+        echo "You selected:"
+        echo "$commits"
+        echo
+
+        if gum confirm "Confirm revert?"; then
+            for c in $commits; do
+                echo "Reverting commit $c..."
+                if git revert --no-edit "$c"; then
+                    print_status "Commit $c reverted."
+                else
+                    print_error "Conflict occurred while reverting $c!"
+                    echo "Please resolve conflicts, then run:"
+                    echo "  git revert --continue"
+                    break
+                fi
+            done
+        else
+            print_status "Revert cancelled."
+        fi
+        ;;
+
+    " Git graph")
+        color=${YELLOW}
+        line1="Git graph"
+        line2="[INFO] press 'q' to exit"
+
+        echo -e "${color}╭$(printf '─%.0s' $(seq 1 30))╮${NC}"
+        printf "${color}│${NC} %-*s ${color}│${NC}\n" 28 "$line1"
+        printf "${color}│${NC} %-*s ${color}│${NC}\n" 28 "$line2"
+        echo -e "${color}╰$(printf '─%.0s' $(seq 1 30))╯${NC}"
+
+        # Use gum spin while loading the graph.
+        # Since git log can be long, we pipe it to less if it's too big,
+        # but gum spin doesn't work well with interactive pagers.
+        # However, for a simple "pretty log", we can just run it.
+        gum spin --title "Drawing git graph..." -- sleep 2
+        pretty_git_log
+        ;;
+
     *)
-      print_warning "Operation cancelled."
-      ;; 
-    esac
-    ;; 
-  "Set remote")
-    # Ask for protocol
-    protocol=$(gum choose "HTTPS (Token)" "SSH")
-
-    if [[ "$protocol" == "HTTPS (Token)" ]]; then
-      if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
-        print_error "GITHUB_USER and GITHUB_TOKEN required for HTTPS!"
-        continue
-      fi
-      reponame=$(gum input --placeholder "Enter repo name (example: my-repo.git)")
-      remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
-    elif [[ "$protocol" == "SSH" ]]; then
-      remote_url=$(gum input --placeholder "Enter SSH URL (e.g., git@github.com:user/repo.git)")
-    else
-      print_warning "No protocol selected."
-      continue
-    fi
-
-    if [[ -n "$remote_url" ]]; then
-      if gum confirm "Set remote to $remote_url?"; then
-        git remote remove origin 2>/dev/null
-        git remote add origin "$remote_url"
-        echo "Remote 'origin' set to $remote_url"
-      else
-        print_status "Operation cancelled."
-      fi
-    else
-      print_warning "No URL provided."
-    fi
-    ;; 
-  "Show status")
-    git status
-    ;; 
-  "Remove files/folders (rm)")
-    # List tracked + untracked files for removal
-    files=$(git ls-files --cached --others --exclude-standard |
-      gum filter --no-limit --placeholder "Select files/folders to remove")
-
-    if [[ -z "$files" ]]; then
-      print_warning "No files selected."
-      continue # Use continue to go back to the main menu
-    fi
-
-    echo "Files selected for removal:"
-    # Use 'tput' for better visual separation and color
-    tput setaf 3
-    echo "$files"
-    tput sgr0
-    echo
-
-    if gum confirm "Confirm removal? This cannot be undone."; then
-      # Use a 'while read' loop to correctly handle filenames with spaces
-      echo "$files" | while read -r f; do
-        if [[ -z "$f" ]]; then continue; fi # Skip empty lines
-
-        # Check if the file is tracked by git
-        if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
-          # It's a tracked file, use 'git rm'
-          git rm -rf "$f"
-        else
-          # It's an untracked file, use 'rm'
-          rm -rf "$f"
-        fi
-      done
-      print_status "Selected files/folders have been removed."
-    else
-      print_status "Operation cancelled."
-    fi
-    ;; 
-  "Uninitialize repo")
-    print_warning "This will completely uninitialize the Git repository in this folder."
-    echo "This action will delete the .git directory and cannot be undone!"
-    echo 
-    
-    if gum confirm "Are you sure you want to continue?"; then
-      if [ -d ".git" ]; then
-        rm -rf .git
-        print_status "Git repository has been uninitialized."
-      else
-        print_error "No .git directory found here. Nothing to do."
-      fi
-    else
-      print_status "Operation cancelled."
-    fi
-    ;; 
-  "Exit")
-    if gum confirm "Are you sure you want to exit?"; then
+        print_error "Invalid choice! Try again."
         echo "Git Wizard vanishes in a puff of smoke..."
-        exit 0
-    else
-        continue
-    fi
-    ;; 
-  "Merge branches")
-    current_branch=$(get_current_branch)
-    print_status "You are on branch: $current_branch"
+        break
+        ;;
+    esac
+
     echo
-
-    # Pick branch to merge from
-    merge_branch=$(git branch --format='%(refname:short)' |
-      grep -v "^$current_branch$" |
-      gum filter --placeholder "Select branch to merge into $current_branch")
-
-    if [[ -z "$merge_branch" ]]; then
-      print_warning "No branch selected. Merge cancelled."
-    else
-      if gum confirm "Merge branch '$merge_branch' into '$current_branch'?"; then
-          echo "Merging branch '$merge_branch' into '$current_branch'..."
-          if gum spin --title "Merging..." -- git merge "$merge_branch"; then
-            print_status "Merge successful!"
-          else
-            print_error "Merge had conflicts! Resolve them manually."
-          fi
-      else
-          print_status "Merge cancelled."
-      fi
-    fi
-    ;; 
-  "Contributor Statistics")
-    show_contributor_stats
-    ;; 
-
-  "Revert commit(s)")
-    print_status "Fetching commit history..."
-    echo
-
-    # Show commits as "<hash> <message>" but keep hash separately
-    commits=$(git log --oneline --decorate |
-      gum filter --no-limit --placeholder "Select commit(s) to revert" |
-      awk '{print $1}')
-
-    if [[ -z "$commits" ]]; then
-      print_warning "No commit selected. Revert cancelled."
-      continue
-    fi
-
-    echo "You selected:"
-    echo "$commits"
-    echo
-    
-    if gum confirm "Confirm revert?"; then
-      for c in $commits; do
-        echo "Reverting commit $c..."
-        if git revert --no-edit "$c"; then
-          print_status "Commit $c reverted."
-        else
-          print_error "Conflict occurred while reverting $c!"
-          echo "Please resolve conflicts, then run:"
-          echo "  git revert --continue"
-          break
-        fi
-      done
-    else
-      print_status "Revert cancelled."
-    fi
-    ;; 
-
-  "Git graph")
-    color=${YELLOW}
-    line1="Git graph"
-    line2="[INFO] press 'q' to exit"
-
-    echo -e "${color}╭$(printf '─%.0s' $(seq 1 30))╮${NC}"
-    printf "${color}│${NC} %-*s ${color}│${NC}\n" 28 "$line1"
-    printf "${color}│${NC} %-*s ${color}│${NC}\n" 28 "$line2"
-    echo -e "${color}╰$(printf '─%.0s' $(seq 1 30))╯${NC}"
-
-    # Use gum spin while loading the graph. 
-    # Since git log can be long, we pipe it to less if it's too big, 
-    # but gum spin doesn't work well with interactive pagers.
-    # However, for a simple "pretty log", we can just run it.
-    gum spin --title "Drawing git graph..." -- sleep 2
-    pretty_git_log
-    ;; 
-
-  *)
-    print_error "Invalid choice! Try again."
-    echo "Git Wizard vanishes in a puff of smoke..."
-    break
-    ;; 
-  esac
-  
-  echo
-  gum style --foreground 240 "Press Enter to continue..."
-  read -r
+    gum style --foreground 240 "Press Enter to continue..."
+    read -r
 done
+
