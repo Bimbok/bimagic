@@ -354,7 +354,7 @@ while true; do
   show_repo_status # <-- shows the status dashboard at the top
 
   # gum menu
-  choice=$(gum choose --header "Choose your spell: (j/k to navigate)" \
+  choice=$(gum choose --header " Choose your spell: (j/k to navigate)" \
     --cursor " " --cursor.foreground "#FF00FF" \
     " Init new repo" \
     " Add files" \
