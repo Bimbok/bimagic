@@ -402,37 +402,37 @@ while true; do
         if [[ -z "$remote" ]]; then
             print_error "No remote set!"
 
-                  # Ask for protocol
-                  protocol=$(gum choose --header "Select protocol: (h/l to navigate)" --layout horizontal "HTTPS (Token)" "SSH")
-            
-                  if [[ "$protocol" == "HTTPS (Token)" ]]; then
-                    if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
-                      print_error "GITHUB_USER and GITHUB_TOKEN required for HTTPS!"
-                      continue
-                    fi
-                    reponame=$(gum input --placeholder "Enter repo name (example: my-repo.git)")
-                    remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
-                  elif [[ "$protocol" == "SSH" ]]; then
-                    remote_url=$(gum input --placeholder "Enter SSH URL (e.g., git@github.com:user/repo.git)")
-                  else
-                    print_warning "No protocol selected."
+            # Ask for protocol
+            protocol=$(gum choose --header "Select protocol: (h/l to navigate)" --layout horizontal "HTTPS (Token)" "SSH")
+
+            if [[ "$protocol" == "HTTPS (Token)" ]]; then
+                if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
+                    print_error "GITHUB_USER and GITHUB_TOKEN required for HTTPS!"
                     continue
-                  fi
-            
-                  if [[ -n "$remote_url" ]]; then
-                    if gum confirm "Set remote to $remote_url?"; then
-                      git remote add origin "$remote_url"
-                      print_status "🔗 Remote 'origin' set to $remote_url"
-                      remote="origin"
-                    else
-                      print_warning "Remote configuration cancelled."
-                      continue
-                    fi
-                  else
-                    print_warning "No URL provided."
-                    continue
-                  fi
                 fi
+                reponame=$(gum input --placeholder "Enter repo name (example: my-repo.git)")
+                remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
+            elif [[ "$protocol" == "SSH" ]]; then
+                remote_url=$(gum input --placeholder "Enter SSH URL (e.g., git@github.com:user/repo.git)")
+            else
+                print_warning "No protocol selected."
+                continue
+            fi
+
+            if [[ -n "$remote_url" ]]; then
+                if gum confirm "Set remote to $remote_url?"; then
+                    git remote add origin "$remote_url"
+                    print_status "🔗 Remote 'origin' set to $remote_url"
+                    remote="origin"
+                else
+                    print_warning "Remote configuration cancelled."
+                    continue
+                fi
+            else
+                print_warning "No URL provided."
+                continue
+            fi
+        fi
         if gum confirm "Push branch '$branch' to '$remote'?"; then
             echo "Pushing branch '$branch' to '$remote'..."
             gum spin --title "Pushing..." -- git push -u "$remote" "$branch"
@@ -492,36 +492,37 @@ while true; do
             ;;
         esac
         ;;
-      " Set remote")
+    " Set remote")
         # Ask for protocol
         protocol=$(gum choose --header "Select protocol: (h/l to navigate)" --layout horizontal "HTTPS (Token)" "SSH")
-    
+
         if [[ "$protocol" == "HTTPS (Token)" ]]; then
-          if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
-            print_error "GITHUB_USER and GITHUB_TOKEN required for HTTPS!"
-            continue
-          fi
-          reponame=$(gum input --placeholder "Enter repo name (example: my-repo.git)")
-          remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
+            if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
+                print_error "GITHUB_USER and GITHUB_TOKEN required for HTTPS!"
+                continue
+            fi
+            reponame=$(gum input --placeholder "Enter repo name (example: my-repo.git)")
+            remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${reponame}"
         elif [[ "$protocol" == "SSH" ]]; then
-          remote_url=$(gum input --placeholder "Enter SSH URL (e.g., git@github.com:user/repo.git)")
+            remote_url=$(gum input --placeholder "Enter SSH URL (e.g., git@github.com:user/repo.git)")
         else
-          print_warning "No protocol selected."
-          continue
+            print_warning "No protocol selected."
+            continue
         fi
-    
+
         if [[ -n "$remote_url" ]]; then
-          if gum confirm "Set remote to $remote_url?"; then
-            git remote remove origin 2>/dev/null
-            git remote add origin "$remote_url"
-            echo "Remote 'origin' set to $remote_url"
-          else
-            print_status "Operation cancelled."
-          fi
+            if gum confirm "Set remote to $remote_url?"; then
+                git remote remove origin 2>/dev/null
+                git remote add origin "$remote_url"
+                echo "Remote 'origin' set to $remote_url"
+            else
+                print_status "Operation cancelled."
+            fi
         else
-          print_warning "No URL provided."
+            print_warning "No URL provided."
         fi
-        ;;    "󱖫 Show status")
+        ;;
+    "󱖫 Show status")
         git status
         ;;
     "󰮘 Remove files/folders (rm)")
@@ -677,4 +678,3 @@ while true; do
     gum style --foreground 240 "Press Enter to continue..."
     read -r
 done
-
