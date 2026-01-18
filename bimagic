@@ -309,6 +309,7 @@ if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
 fi
 
 while true; do
+  clear
   show_repo_status # <-- shows the status dashboard at the top
 
   # gum menu
@@ -673,5 +674,8 @@ while true; do
     break
     ;; 
   esac
+  
   echo
+  gum style --foreground 240 "Press Enter to continue..."
+  read -r
 done
