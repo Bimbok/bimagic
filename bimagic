@@ -175,7 +175,7 @@ STATUS: $status"
 
   echo
   gum style \
-    --border normal \
+    --border rounded \
     --margin "1 0" \
     --padding "1 2" \
     --border-foreground "$color" \
