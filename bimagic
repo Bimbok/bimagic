@@ -385,8 +385,13 @@ while true; do
       print_warning "No commit message provided. Cancelled."
       continue
     fi
-    git commit -m "$msg"
-    print_status "Commit done!"
+    
+    if gum confirm "Commit changes?"; then
+      git commit -m "$msg"
+      print_status "Commit done!"
+    else
+      print_status "Commit cancelled."
+    fi
     ;; 
   "Push to remote")
     branch=$(git symbolic-ref --short HEAD 2>/dev/null)
@@ -414,17 +419,26 @@ while true; do
       fi
 
       if [[ -n "$remote_url" ]]; then
-        git remote add origin "$remote_url"
-        print_status "🔗 Remote 'origin' set to $remote_url"
-        remote="origin"
+        if gum confirm "Set remote to $remote_url?"; then
+            git remote add origin "$remote_url"
+            print_status "🔗 Remote 'origin' set to $remote_url"
+            remote="origin"
+        else
+            print_warning "Remote configuration cancelled."
+            continue
+        fi
       else
         print_warning "No URL provided."
         continue
       fi
     fi
 
-    echo "Pushing branch '$branch' to '$remote'..."
-    gum spin --title "Pushing..." -- git push -u "$remote" "$branch"
+    if gum confirm "Push branch '$branch' to '$remote'?"; then
+        echo "Pushing branch '$branch' to '$remote'..."
+        gum spin --title "Pushing..." -- git push -u "$remote" "$branch"
+    else
+        print_status "Push cancelled."
+    fi
     ;; 
   "Pull latest changes")
     branch=$(gum input --value "main" --placeholder "Enter branch to pull")
@@ -434,7 +448,11 @@ while true; do
     if [[ -z "$remote" ]]; then
       print_error "No remote set! Cannot pull."
     else
-      gum spin --title "Pulling..." -- git pull "$remote" "$branch"
+      if gum confirm "Pull branch '$branch' from '$remote'?"; then
+          gum spin --title "Pulling..." -- git pull "$remote" "$branch"
+      else
+          print_status "Pull cancelled."
+      fi
     fi
     ;; 
   "Create/switch branch")
@@ -493,9 +511,13 @@ while true; do
     fi
 
     if [[ -n "$remote_url" ]]; then
-      git remote remove origin 2>/dev/null
-      git remote add origin "$remote_url"
-      echo "Remote 'origin' set to $remote_url"
+      if gum confirm "Set remote to $remote_url?"; then
+        git remote remove origin 2>/dev/null
+        git remote add origin "$remote_url"
+        echo "Remote 'origin' set to $remote_url"
+      else
+        print_status "Operation cancelled."
+      fi
     else
       print_warning "No URL provided."
     fi
@@ -556,8 +578,12 @@ while true; do
     fi
     ;; 
   "Exit")
-    echo "Git Wizard vanishes in a puff of smoke..."
-    exit 0
+    if gum confirm "Are you sure you want to exit?"; then
+        echo "Git Wizard vanishes in a puff of smoke..."
+        exit 0
+    else
+        continue
+    fi
     ;; 
   "Merge branches")
     current_branch=$(get_current_branch)
@@ -572,11 +598,15 @@ while true; do
     if [[ -z "$merge_branch" ]]; then
       print_warning "No branch selected. Merge cancelled."
     else
-      echo "Merging branch '$merge_branch' into '$current_branch'..."
-      if gum spin --title "Merging..." -- git merge "$merge_branch"; then
-        print_status "Merge successful!"
+      if gum confirm "Merge branch '$merge_branch' into '$current_branch'?"; then
+          echo "Merging branch '$merge_branch' into '$current_branch'..."
+          if gum spin --title "Merging..." -- git merge "$merge_branch"; then
+            print_status "Merge successful!"
+          else
+            print_error "Merge had conflicts! Resolve them manually."
+          fi
       else
-        print_error "Merge had conflicts! Resolve them manually."
+          print_status "Merge cancelled."
       fi
     fi
     ;; 
