@@ -370,13 +370,13 @@ while true; do
     " Merge branches" \
     " Uninitialize repo" \
     "󰁯 Revert commit(s)" \
-    " Stash operations" \
+    "󰓗 Stash operations" \
     "󰿅 Exit")
 
   echo
 
   case "$choice" in
-  " Stash operations")
+  "󰓗 Stash operations")
     while true; do
       stash_choice=$(gum choose --header "Stash Operations" \
         "󱉛 Push (Save) changes" \
