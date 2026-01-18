@@ -1,0 +1,21 @@
+# IDEs and Editors
+.vscode/*
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and Temp
+*.log
+tmp/
+temp/
+
+# Backup files
+*.bak
+*~
+
+GEMINI.md
