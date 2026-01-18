@@ -65,10 +65,9 @@ export PATH="$HOME/bin:$PATH"  # For user-local installation
 
 ## Dependencies
 
-- fzf (required for interactive selection)
-  - Linux (apt): `sudo apt install fzf`
-  - macOS (Homebrew): `brew install fzf`
-  - If not installed, the menu selections will not work.
+- gum (required for modern UI and interactive selection)
+  - See installation instructions below or use the automated script.
+  - If not installed, the tool will not work.
 
 ## Configuration
 
@@ -126,7 +125,7 @@ At the top of the interface, a status box summarizes:
 ### Menu Options
 
 1. **Init new repo** - Initialize a new Git repository (auto-renames master → main)
-2. **Add files** - Stage files (fzf multi-select; includes [ALL])
+2. **Add files** - Stage files (interactive multi-select; includes [ALL])
 3. **Commit changes** - Commit staged changes with a message
 4. **Push to remote** - Push changes (auto-sets remote with token if missing)
 5. **Pull latest changes** - Fetch and merge changes from remote
@@ -159,14 +158,14 @@ Displays a pretty, colorized `git log --graph` with abbrev commit, decorations, 
 The `Remove files/folders (rm)` option lets you select files and folders interactively using fzf, with full git integration:
 
 #### Features:
-- **fzf Multi-select**: Select one or many files to remove
+- **Interactive Multi-select**: Select one or many files to remove
 - **Git Integration**: Tracked files are removed via `git rm -rf`; untracked via `rm -rf`
 - **Safety Confirmation**: Explicit confirmation before deletion
 - **Smart Detection**: Works whether or not a file is tracked in git
 
 #### How it works:
 1. A list of tracked and untracked files is displayed
-2. Use fzf to multi-select entries (TAB to select, ENTER to confirm)
+2. Use the interactive filter to multi-select entries (TAB to select, ENTER to confirm)
 3. The selection is previewed and you are asked to confirm (y/N)
 4. Each selected item is removed appropriately (git-tracked or filesystem)
 5. A success message lists removed paths
@@ -187,7 +186,7 @@ Merge another branch into your current branch using an interactive selector. If 
 - **Preview** of what will be deleted before proceeding
 - **Existence check** - only proceeds if files actually exist
 - **Git-aware** - uses `git rm` for tracked files, regular `rm` for untracked files
-Revert one or more commits selected via fzf from `git log --oneline`. Each selected commit is reverted in sequence; on conflicts, the process stops and you are instructed to resolve and continue.
+Revert one or more commits selected via interactive filter from `git log --oneline`. Each selected commit is reverted in sequence; on conflicts, the process stops and you are instructed to resolve and continue.
 
 #### Flow:
 1. Select commit(s) to revert (multi-select)
