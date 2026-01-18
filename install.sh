@@ -14,7 +14,7 @@ fi
 
 # Function to detect OS and install fzf
 install_fzf() {
-    echo "🔍 Detecting operating system..."
+    echo "🔍 Detecting operating system for fzf..."
     
     # Detect OS
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -66,6 +66,36 @@ install_fzf_from_source() {
     fi
 }
 
+# Function to install gum
+install_gum() {
+    echo "🔍 Checking for supported package managers to install gum..."
+
+    if command -v brew &> /dev/null; then
+        echo "📦 Installing gum via Homebrew..."
+        brew install gum
+    elif command -v pacman &> /dev/null; then
+        echo "📦 Installing gum via pacman (Arch Linux)..."
+        sudo pacman -S --noconfirm gum
+    elif command -v nix-env &> /dev/null; then
+        echo "📦 Installing gum via Nix..."
+        nix-env -iA nixpkgs.gum
+    elif command -v flox &> /dev/null; then
+        echo "📦 Installing gum via Flox..."
+        flox install gum
+    elif command -v winget &> /dev/null; then
+        echo "📦 Installing gum via WinGet..."
+        winget install charmbracelet.gum
+    elif command -v scoop &> /dev/null; then
+        echo "📦 Installing gum via Scoop..."
+        scoop install charm-gum
+    else
+        echo "❌ Could not find a supported package manager for automated gum installation."
+        echo "Please install gum manually using instructions from: https://github.com/charmbracelet/gum"
+        echo "Note: Ubuntu/Debian users may need to add the Charm repository."
+        return 1
+    fi
+}
+
 # Check for fzf dependency
 if ! command -v fzf &> /dev/null; then
     echo "⚠️  fzf is not installed. Bimagic requires fzf for its interactive menu."
@@ -79,35 +109,38 @@ if ! command -v fzf &> /dev/null; then
             echo "✅ fzf installed successfully!"
         else
             echo "❌ Failed to install fzf automatically."
-            echo ""
-            echo "Please install fzf manually using one of these methods:"
-            echo ""
-            echo "Ubuntu/Debian: sudo apt update && sudo apt install fzf"
-            echo "CentOS/RHEL/Fedora: sudo dnf install fzf"
-            echo "Arch Linux: sudo pacman -S fzf"
-            echo "macOS: brew install fzf"
-            echo "From source: git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install"
-            echo ""
-            read -p "Do you want to continue with the installation anyway? (y/N): " -r continue_install
-            if [[ ! $continue_install =~ ^[Yy]$ ]]; then
-                echo "Installation cancelled. Please install fzf first."
-                exit 1
-            else
-                echo "Continuing installation... (Note: Bimagic will not work properly without fzf)"
-            fi
+            echo "Please install fzf manually."
+            exit 1
         fi
     else
-        echo "Skipping fzf installation."
-        read -p "Do you want to continue with the installation anyway? (y/N): " -r continue_install
-        if [[ ! $continue_install =~ ^[Yy]$ ]]; then
-            echo "Installation cancelled. Please install fzf first."
-            exit 1
-        else
-            echo "Continuing installation... (Note: Bimagic will not work properly without fzf)"
-        fi
+        echo "Skipping fzf installation. Bimagic may not work properly."
     fi
 else
     echo "✅ fzf is installed and ready"
+fi
+
+# Check for gum dependency
+if ! command -v gum &> /dev/null; then
+    echo "⚠️  gum is not installed. Bimagic requires gum for its modern UI."
+    echo ""
+    read -p "Do you want to automatically install gum? (Y/n): " -r auto_install_gum
+    auto_install_gum=${auto_install_gum:-Y}  # Default to Y if empty
+    
+    if [[ $auto_install_gum =~ ^[Yy]$ ]]; then
+        echo "🚀 Attempting to automatically install gum..."
+        if install_gum; then
+            echo "✅ gum installed successfully!"
+        else
+            echo "❌ Failed to install gum automatically."
+            echo "Please install gum manually: https://github.com/charmbracelet/gum"
+            exit 1
+        fi
+    else
+        echo "Skipping gum installation. Bimagic will not work without it."
+        exit 1
+    fi
+else
+    echo "✅ gum is installed and ready"
 fi
 
 # Clone the repository
@@ -147,8 +180,8 @@ echo "Successfully installed bimagic to $TARGET_DIR!"
 echo "Please ensure GITHUB_USER and GITHUB_TOKEN are set as environment variables."
 
 # Check if target directory is in PATH
-if [[ ":$PATH:" != *":$TARGET_DIR:"* ]]; then
+if [[ ":$PATH:" != ":$TARGET_DIR:"* ]]; then
     echo "Note: $TARGET_DIR is not in your PATH. Add it to your shell profile:"
-    echo "  echo 'export PATH=\"\$PATH:$TARGET_DIR\"' >> ~/.bashrc"
+    echo "  echo 'export PATH=\"$PATH:$TARGET_DIR\"' >> ~/.bashrc"
     echo "  source ~/.bashrc"
 fi
