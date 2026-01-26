@@ -11,7 +11,8 @@ Bimagic is an interactive command-line tool that streamlines common Git operatio
 
 ## Sample
 
-https://github.com/user-attachments/assets/36d09f38-fe48-4476-8b08-f592222224a9
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/895772c0-ddda-444a-a4ae-390be46e625c" />
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/92e8ccc3-baae-4840-b3f3-4b425f77f045" />
 
 ## Features
 
