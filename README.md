@@ -1,4 +1,5 @@
-# Bimagic - Git Wizard 🧙‍♂️
+# Bimagic - Git Wizard
+<img width="2361" height="1472" alt="Image" src="https://github.com/user-attachments/assets/d74de26d-949b-4aa9-9b2e-c25de5b25b42" />
 
 By Bimbok and adityapaul26
 
