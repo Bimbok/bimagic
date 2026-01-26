@@ -569,19 +569,53 @@ while true; do
     fi
     ;;
   " Pull latest changes")
-    branch=$(gum input --value "main" --placeholder "Enter branch to pull")
-    branch=${branch:-main}
-
-    remote=$(git remote 2>/dev/null)
-    if [[ -z "$remote" ]]; then
-      print_error "No remote set! Cannot pull."
+    # Auto-fetch before pulling
+    if gum spin --title "Fetching updates..." -- git fetch --all; then
+      print_status "Fetch complete."
     else
-      if gum confirm "Pull branch '$branch' from '$remote'?"; then
-        gum spin --title "Pulling..." -- git pull "$remote" "$branch"
+      print_warning "Fetch encountered issues."
+    fi
+
+    pull_choice=$(gum choose --header "Select pull mode" \
+      "Pull specific branch" \
+      "Pull all")
+
+    case "$pull_choice" in
+    "Pull all")
+      if gum confirm "Run 'git pull --all'?"; then
+        gum spin --title "Pulling all..." -- git pull --all
+        print_status "Pull all complete."
       else
         print_status "Pull cancelled."
       fi
-    fi
+      ;;
+    "Pull specific branch")
+      branch=$(gum input --value "main" --placeholder "Enter branch to pull")
+      branch=${branch:-main}
+
+      remotes=$(git remote 2>/dev/null)
+      if [[ -z "$remotes" ]]; then
+        print_error "No remote set! Cannot pull."
+      else
+        # Select remote if multiple exist
+        if [[ $(echo "$remotes" | wc -l) -eq 1 ]]; then
+          remote="$remotes"
+        else
+          remote=$(echo "$remotes" | gum filter --placeholder "Select remote to pull from")
+        fi
+
+        if [[ -n "$remote" ]]; then
+          if gum confirm "Pull branch '$branch' from '$remote'?"; then
+            gum spin --title "Pulling..." -- git pull "$remote" "$branch"
+          else
+            print_status "Pull cancelled."
+          fi
+        else
+          print_warning "No remote selected."
+        fi
+      fi
+      ;;
+    esac
     ;;
   " Create/switch branch")
     # Show current branch and all available branches
