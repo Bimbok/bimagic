@@ -19,6 +19,7 @@ Bimagic is an interactive command-line tool that streamlines common Git operatio
 - 🔮 Interactive menu-driven interface
 - 🔐 Secure GitHub authentication via personal access tokens
 - 📦 Easy repository initialization and setup
+-  Clone repositories (Standard or Interactive selection)
 - 🔄 Simplified push/pull operations
 - 🌿 Branch management made easy
 - 📊 Status dashboard (ahead/behind, branch, clean/uncommitted/conflicts)
@@ -170,6 +171,19 @@ Simply run the `bimagic` command in your terminal:
 bimagic
 ```
 
+### Command Line Flags
+
+You can also use flags to perform specific actions immediately:
+
+- **Clone Repository**:
+  ```bash
+  bimagic -d "repo-url"
+  ```
+- **Interactive Clone** (Select specific files/folders to download):
+  ```bash
+  bimagic -d -i "repo-url"
+  ```
+
 You'll be presented with an interactive menu where you can choose from various Git operations.
 
 ### Status Dashboard
@@ -182,23 +196,39 @@ At the top of the interface, a status box summarizes:
 
 ### Menu Options
 
-1. **Init new repo** - Initialize a new Git repository (auto-renames master → main)
-2. **Add files** - Stage files (interactive multi-select; includes [ALL])
-3. **Commit changes** - Commit staged changes with a message
-4. **Push to remote** - Push changes (handles multiple remotes and auto-configuration)
-5. **Pull latest changes** - Fetch and merge changes from remote
-6. **Create/switch branch** - Create a new branch or switch to an existing one
-7. **Set remote** - Configure remotes (supports HTTPS with token or SSH)
-8. **Show status** - Display repo status dashboard (ahead/behind, branch, cleanliness)
-9. **Contributor Statistics** - View per-author activity with time range selection
-10. **Git graph** - Pretty git log with graph and decorations
-11. **Remove files/folders (rm)** - Safely remove files/folders with git integration
-12. **Merge branches** - Merge a selected branch into the current one
-13. **Uninitialize repo** – Remove Git tracking from a project
-14. **Revert commit(s)** - Revert one or more commits (multi-select)
-15. **Exit** - Quit the wizard
+1. **Clone repository** - Clone a repository from a URL (supports standard and interactive modes)
+2. **Init new repo** - Initialize a new Git repository (auto-renames master → main)
+3. **Add files** - Stage files (interactive multi-select; includes [ALL])
+4. **Commit changes** - Commit staged changes with a message
+5. **Push to remote** - Push changes (handles multiple remotes and auto-configuration)
+6. **Pull latest changes** - Fetch and merge changes from remote
+7. **Create/switch branch** - Create a new branch or switch to an existing one
+8. **Set remote** - Configure remotes (supports HTTPS with token or SSH)
+9. **Show status** - Display repo status dashboard (ahead/behind, branch, cleanliness)
+10. **Contributor Statistics** - View per-author activity with time range selection
+11. **Git graph** - Pretty git log with graph and decorations
+12. **Remove files/folders (rm)** - Safely remove files/folders with git integration
+13. **Merge branches** - Merge a selected branch into the current one
+14. **Uninitialize repo** – Remove Git tracking from a project
+15. **Revert commit(s)** - Revert one or more commits (multi-select)
+16. **Exit** - Quit the wizard
 
-### Contributor Statistics (Option 9)
+### Clone repository (Option 1)
+
+This feature allows you to clone a repository with two modes:
+
+#### Standard Clone
+Perform a full `git clone` of the target repository.
+
+#### Interactive Clone (Sparse Checkout)
+If you only need specific files or folders from a large repository, this mode allows you to:
+1. Download the repository metadata without file contents.
+2. Select specific files/folders interactively.
+3. Download only the selected items into your local directory.
+
+Usage from CLI: `bimagic -d -i "repo-url"`
+
+### Contributor Statistics (Option 10)
 
 Analyze contributions over a chosen time range (Last 7/30/90 days, Last year, All time). The tool parses `git log --numstat` to compute per-author lines changed and commit counts, and surfaces highlights like most active/productive contributors.
 
@@ -208,11 +238,11 @@ Analyze contributions over a chosen time range (Last 7/30/90 days, Last year, Al
 - Lines changed and commit counts
 - Highlights: most active and most productive
 
-### Git graph (Option 10)
+### Git graph (Option 11)
 
 Displays a pretty, colorized `git log --graph` with abbrev commit, decorations, author, date, and subject. Press `q` to exit the view.
 
-### File Removal (Option 11)
+### File Removal (Option 12)
 
 The `Remove files/folders (rm)` option lets you select files and folders interactively, with full git integration:
 
@@ -231,7 +261,7 @@ The `Remove files/folders (rm)` option lets you select files and folders interac
 4. Each selected item is removed appropriately (git-tracked or filesystem)
 5. A success message lists removed paths
 
-### Merge branches (Option 12)
+### Merge branches (Option 13)
 
 Merge another branch into your current branch using an interactive selector. If conflicts occur, you will be notified to resolve them manually.
 
@@ -241,7 +271,7 @@ Merge another branch into your current branch using an interactive selector. If 
 2. Select a branch (other than current) to merge into the current one
 3. If merge succeeds, you get a success message; otherwise, conflicts are reported
 
-### Revert commit(s) (Option 14)
+### Revert commit(s) (Option 15)
 
 #### Safety Features:
 

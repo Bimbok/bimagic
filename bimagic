@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="v1.0.2"
+VERSION="v1.1.3"
 
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
   echo "Bimagic Git Wizard $VERSION"
@@ -341,6 +341,75 @@ show_contributor_stats() {
   local total_contributors=$(echo "$stats" | wc -l)
   echo -e "${BLUE}Total Contributors:${NC} $total_contributors"
 }
+
+# Function to clone a repository (Standard or Interactive)
+clone_repo() {
+  local url=$1
+  local interactive=$2
+
+  # Extract repo name from URL (basename, remove .git)
+  local repo_name=$(basename "$url" .git)
+
+  if [[ -d "$repo_name" ]]; then
+    print_error "Directory '$repo_name' already exists."
+    return 1
+  fi
+
+  if [[ "$interactive" == "true" ]]; then
+    print_status "Initializing interactive clone for $repo_name..."
+
+    # 1. Clone with --no-checkout and --filter=blob:none (downloads commits/trees, no file contents)
+    if ! gum spin --title "Cloning structure..." -- git clone --filter=blob:none --no-checkout "$url" "$repo_name"; then
+      print_error "Clone failed."
+      return 1
+    fi
+
+    pushd "$repo_name" >/dev/null || return 1
+
+    # 2. List all files (from HEAD) and let user select
+    print_status "Fetching file list..."
+    local selected_paths
+    # git ls-tree -r --name-only HEAD lists all files recursively
+    selected_paths=$(git ls-tree -r --name-only HEAD | gum filter --no-limit --placeholder "Select files/folders to download (Space to select)")
+
+    if [[ -z "$selected_paths" ]]; then
+      print_warning "No files selected. Aborting checkout."
+      popd >/dev/null
+      rm -rf "$repo_name"
+      return 1
+    fi
+
+    # 3. Configure sparse-checkout
+    # FIX: Add --no-cone so Git accepts individual file paths
+    gum spin --title "Configuring sparse checkout..." -- git sparse-checkout init --no-cone
+
+    # We use 'set' with the selected paths.
+    # Note: --cone mode works best with directories, but for specific files we might rely on the fact
+    # that sparse-checkout patterns handle full paths.
+    # However, 'git sparse-checkout set' treats arguments as patterns.
+    # We turn off cone for precise file selection transparency if needed, but standard 'set' often works.
+    # To be safe for exact file paths, we simply pass them.
+    # If the list is huge, this might fail on command line length.
+    # Ideally we pipe to 'git sparse-checkout set --stdin', but gum returns newline separated.
+
+    echo "$selected_paths" | git sparse-checkout set --stdin
+    # 4. Checkout HEAD to download the blobs for matched files
+    gum spin --title "Downloading selected files..." -- git checkout HEAD
+
+    popd >/dev/null
+    print_status "Successfully cloned selected files into '$repo_name'!"
+
+  else
+    # Standard clone
+    if gum spin --title "Cloning repository..." -- git clone "$url"; then
+      print_status "Successfully cloned '$url' into '$repo_name'!"
+    else
+      print_error "Clone failed."
+      return 1
+    fi
+  fi
+}
+
 #function to display git graph
 pretty_git_log() {
   git log --graph \
@@ -356,6 +425,41 @@ if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
   print_warning "GITHUB_USER or GITHUB_TOKEN not set. Defaulting to SSH/Local mode."
 fi
 
+# Parse CLI arguments for Clone mode
+CLI_MODE=""
+CLI_URL=""
+CLI_INTERACTIVE="false"
+
+# Preserve args in a loop to handle -d flag
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  -d)
+    CLI_MODE="clone"
+    shift
+    ;;
+  -i)
+    CLI_INTERACTIVE="true"
+    shift
+    ;;
+  *)
+    # Assume it's the URL if mode is clone and URL is empty
+    if [[ "$CLI_MODE" == "clone" && -z "$CLI_URL" ]]; then
+      CLI_URL="$1"
+    fi
+    shift
+    ;;
+  esac
+done
+
+if [[ "$CLI_MODE" == "clone" ]]; then
+  if [[ -z "$CLI_URL" ]]; then
+    print_error "Error: Repository URL required with -d"
+    exit 1
+  fi
+  clone_repo "$CLI_URL" "$CLI_INTERACTIVE"
+  exit $?
+fi
+
 while true; do
   clear
   show_repo_status # <-- shows the status dashboard at the top
@@ -363,6 +467,7 @@ while true; do
   # gum menu
   choice=$(gum choose --header " Choose your spell: (j/k to navigate)" \
     --cursor " " --cursor.foreground "#FF00FF" \
+    " Clone repository" \
     " Init new repo" \
     " Add files" \
     " Commit changes" \
@@ -383,6 +488,18 @@ while true; do
   echo
 
   case "$choice" in
+  " Clone repository")
+    repo_url=$(gum input --placeholder "Enter repository URL")
+    if [[ -z "$repo_url" ]]; then continue; fi
+
+    clone_mode=$(gum choose "Standard Clone" "Interactive (Select files)")
+
+    if [[ "$clone_mode" == "Interactive (Select files)" ]]; then
+      clone_repo "$repo_url" "true"
+    else
+      clone_repo "$repo_url" "false"
+    fi
+    ;;
   "󰓗 Stash operations")
     while true; do
       stash_choice=$(gum choose --header "Stash Operations" \
