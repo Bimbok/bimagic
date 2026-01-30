@@ -1,5 +1,5 @@
 # Bimagic - Git Wizard
-<img width="2361" height="1472" alt="Image" src="https://github.com/user-attachments/assets/d74de26d-949b-4aa9-9b2e-c25de5b25b42" />
+<img width="600" alt="Image" src="https://github.com/user-attachments/assets/d74de26d-949b-4aa9-9b2e-c25de5b25b42" />
 
 By Bimbok and adityapaul26
 
@@ -12,7 +12,10 @@ Bimagic is an interactive command-line tool that streamlines common Git operatio
 ## Sample
 
 <img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/895772c0-ddda-444a-a4ae-390be46e625c" />
+<p align="center">bimagic in a terminal (kitty)</p>
+
 <img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/92e8ccc3-baae-4840-b3f3-4b425f77f045" />
+<p align="center">bimagic in neovim</p>
 
 ## Features
 
@@ -29,6 +32,7 @@ Bimagic is an interactive command-line tool that streamlines common Git operatio
 - 🌐 Git graph (pretty git log) viewer
 - 🔀 Merge branches with conflict detection
 - ⏪ Revert commit(s) with multi-select
+- 󰓗 Stash operations (Push, Pop, List, Apply, Drop, Clear)
 
 ## Installation
 
@@ -211,7 +215,8 @@ At the top of the interface, a status box summarizes:
 13. **Merge branches** - Merge a selected branch into the current one
 14. **Uninitialize repo** – Remove Git tracking from a project
 15. **Revert commit(s)** - Revert one or more commits (multi-select)
-16. **Exit** - Quit the wizard
+16. **Stash operations** - Manage stashes (push, pop, list, apply, drop, clear)
+17. **Exit** - Quit the wizard
 
 ### Clone repository (Option 1)
 
@@ -287,6 +292,19 @@ Merge another branch into your current branch using an interactive selector. If 
 2. Confirm the action (y/N)
 3. Reverts run with `git revert --no-edit`
 4. On conflict, resolve then run `git revert --continue`
+
+### Stash operations (Option 16)
+
+Manage your git stashes with a comprehensive menu.
+
+#### Features:
+
+- **Push (Save)**: Stash changes with an optional message and support for untracked files
+- **Pop**: Apply and remove the latest stash
+- **List**: View all saved stashes
+- **Apply**: Apply a specific stash without removing it
+- **Drop**: Delete a specific stash
+- **Clear**: Remove all stashes (with safety confirmation)
 
 ## Why Sudo Might Be Required
 
