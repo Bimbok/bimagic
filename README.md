@@ -1,7 +1,9 @@
 # Bimagic - Git Wizard
-<img width="600" alt="Image" src="https://github.com/user-attachments/assets/d74de26d-949b-4aa9-9b2e-c25de5b25b42" />
+<p align="center">
+  <img width="400" alt="Image" src="https://github.com/user-attachments/assets/d74de26d-949b-4aa9-9b2e-c25de5b25b42" />
+</p>
 
-By Bimbok and adityapaul26
+<p align="center">By Bimbok and adityapaul26</p>
 
 A powerful Bash-based Git automation tool that simplifies your GitHub workflow with an interactive menu system.
 
