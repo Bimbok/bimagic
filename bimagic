@@ -471,7 +471,7 @@ ${body}"
 
   if gum confirm "Commit with this message?"; then
     git commit -m "$commit_msg"
-    print_status "✨ Mischief managed! (Commit successful)"
+    print_status "󱝁 Mischief managed! (Commit successful)"
   else
     print_warning "Commit cancelled."
   fi
@@ -715,9 +715,9 @@ while true; do
     fi
     ;;
   " Commit changes")
-    commit_mode=$(gum choose "🧙 Magic Commit (Builder)" "⚡ Quick Commit (One-line)")
+    commit_mode=$(gum choose "󰦥 Magic Commit (Builder)" "󱐋 Quick Commit (One-line)")
 
-    if [[ "$commit_mode" == "🧙 Magic Commit (Builder)" ]]; then
+    if [[ "$commit_mode" == "󰦥 Magic Commit (Builder)" ]]; then
       commit_wizard
     else
       msg=$(gum input --placeholder "Enter commit message")
