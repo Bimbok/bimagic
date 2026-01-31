@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="v1.1.3"
+VERSION="v1.2.0"
 
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
   echo "Bimagic Git Wizard $VERSION"
@@ -492,12 +492,13 @@ if [[ -z "$GITHUB_USER" ]] || [[ -z "$GITHUB_TOKEN" ]]; then
   print_warning "GITHUB_USER or GITHUB_TOKEN not set. Defaulting to SSH/Local mode."
 fi
 
-# Parse CLI arguments for Clone mode
+# Parse CLI arguments
 CLI_MODE=""
 CLI_URL=""
+CLI_MSG=""
 CLI_INTERACTIVE="false"
 
-# Preserve args in a loop to handle -d flag
+# Preserve args in a loop
 while [[ $# -gt 0 ]]; do
   case "$1" in
   -d)
@@ -508,15 +509,31 @@ while [[ $# -gt 0 ]]; do
     CLI_INTERACTIVE="true"
     shift
     ;;
+  -z)
+    CLI_MODE="lazy"
+    shift
+    ;;
+  -s)
+    CLI_MODE="status"
+    shift
+    ;;
+  -g)
+    CLI_MODE="graph"
+    shift
+    ;;
   *)
-    # Assume it's the URL if mode is clone and URL is empty
+    # Argument handling based on current mode
     if [[ "$CLI_MODE" == "clone" && -z "$CLI_URL" ]]; then
       CLI_URL="$1"
+    elif [[ "$CLI_MODE" == "lazy" && -z "$CLI_MSG" ]]; then
+      CLI_MSG="$1"
     fi
     shift
     ;;
   esac
 done
+
+# --- Mode Handlers ---
 
 if [[ "$CLI_MODE" == "clone" ]]; then
   if [[ -z "$CLI_URL" ]]; then
@@ -527,30 +544,95 @@ if [[ "$CLI_MODE" == "clone" ]]; then
   exit $?
 fi
 
+if [[ "$CLI_MODE" == "status" ]]; then
+  show_repo_status
+  exit 0
+fi
+
+if [[ "$CLI_MODE" == "graph" ]]; then
+  if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    print_error "Not a git repository!"
+    exit 1
+  fi
+  pretty_git_log
+  exit 0
+fi
+
+if [[ "$CLI_MODE" == "lazy" ]]; then
+  if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    print_error "Not a git repository!"
+    exit 1
+  fi
+
+  if [[ -z "$CLI_MSG" ]]; then
+    print_error "Error: Commit message required for Lazy Wizard (-z)"
+    echo "Usage: bimagic -z \"commit message\""
+    exit 1
+  fi
+
+  print_status "🧙 Lazy Wizard invoked!"
+  
+  # 1. Add all changes
+  if gum spin --title "Adding files..." -- git add .; then
+    print_status "Files added."
+  else
+    print_error "Failed to add files."
+    exit 1
+  fi
+
+  # 2. Commit
+  if git commit -m "$CLI_MSG"; then
+    print_status "Committed: $CLI_MSG"
+  else
+    print_error "Commit failed (nothing to commit?)"
+    exit 1
+  fi
+
+  # 3. Push
+  branch=$(get_current_branch)
+  print_status "Pushing to $branch..."
+  
+  if gum spin --title "Pushing..." -- git push; then
+    print_status "✨ Magic complete!"
+  else
+    # Try setting upstream if standard push failed
+    print_warning "Standard push failed. Trying to set upstream..."
+    if gum spin --title "Pushing (upstream)..." -- git push -u origin "$branch"; then
+       print_status "✨ Magic complete (upstream set)!"
+    else
+       print_error "Push failed."
+       exit 1
+    fi
+  fi
+  exit 0
+fi
+
 while true; do
   clear
   show_repo_status # <-- shows the status dashboard at the top
 
   # gum menu
-  choice=$(gum choose --header " Choose your spell: (j/k to navigate)" \
-    --cursor " " --cursor.foreground "#FF00FF" \
-    " Clone repository" \
-    " Init new repo" \
-    " Add files" \
-    " Commit changes" \
-    " Push to remote" \
-    " Pull latest changes" \
-    " Create/switch branch" \
-    " Set remote" \
-    "󱖫 Show status" \
-    " Contributor Statistics" \
-    " Git graph" \
-    "󰮘 Remove files/folders (rm)" \
-    " Merge branches" \
-    " Uninitialize repo" \
-    "󰁯 Revert commit(s)" \
-    "󰓗 Stash operations" \
-    "󰿅 Exit")
+  choice=$(
+    gum choose --header " Choose your spell: (j/k to navigate)" \
+      --cursor " " --cursor.foreground "#FF00FF" \
+      " Clone repository" \
+      " Init new repo" \
+      " Add files" \
+      " Commit changes" \
+      " Push to remote" \
+      " Pull latest changes" \
+      " Create/switch branch" \
+      " Set remote" \
+      "󱖫 Show status" \
+      " Contributor Statistics" \
+      " Git graph" \
+      "󰮘 Remove files/folders (rm)" \
+      " Merge branches" \
+      " Uninitialize repo" \
+      "󰁯 Revert commit(s)" \
+      "󰓗 Stash operations" \
+      "󰿅 Exit"
+  )
 
   echo
 

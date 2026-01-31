@@ -189,6 +189,18 @@ You can also use flags to perform specific actions immediately:
   ```bash
   bimagic -d -i "repo-url"
   ```
+- **The Lazy Wizard** (Add + Commit + Push):
+  ```bash
+  bimagic -z "commit message"
+  ```
+- **The Crystal Ball** (Show Status Dashboard):
+  ```bash
+  bimagic -s
+  ```
+- **The Time Scroll** (Show Git Graph):
+  ```bash
+  bimagic -g
+  ```
 
 You'll be presented with an interactive menu where you can choose from various Git operations.
 
