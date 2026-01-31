@@ -10,9 +10,9 @@ FOUND_INSTALLS=()
 
 # Check where bimagic is installed
 for dir in "${TARGET_DIRS[@]}"; do
-    if [[ -f "$dir/bimagic" ]]; then
+    if [[ -f "$dir/bimagic" || -f "$dir/wz" ]]; then
         FOUND_INSTALLS+=("$dir")
-        echo "Found Bimagic installation in: $dir"
+        echo "Found Bimagic installation (or alias) in: $dir"
     fi
 done
 
@@ -22,7 +22,7 @@ if [[ ${#FOUND_INSTALLS[@]} -eq 0 ]]; then
 fi
 
 # Confirm uninstallation
-read -p "Are you sure you want to uninstall Bimagic? (y/N): " -r confirm < /dev/tty
+read -p "Are you sure you want to uninstall Bimagic and the 'wz' alias? (y/N): " -r confirm < /dev/tty
 if [[ ! $confirm =~ ^[Yy]$ ]]; then
     echo "Uninstallation cancelled."
     exit 0
@@ -34,14 +34,14 @@ for dir in "${FOUND_INSTALLS[@]}"; do
     
     if [[ "$dir" == "/usr/local/bin" ]]; then
         # Need sudo for system directory
-        if sudo rm -f "$dir/bimagic"; then
+        if sudo rm -f "$dir/bimagic" "$dir/wz"; then
             echo "✓ Successfully removed from $dir"
         else
             echo "✗ Failed to remove from $dir (permission issue?)"
         fi
     else
         # User directory, no sudo needed
-        if rm -f "$dir/bimagic"; then
+        if rm -f "$dir/bimagic" "$dir/wz"; then
             echo "✓ Successfully removed from $dir"
         else
             echo "✗ Failed to remove from $dir"

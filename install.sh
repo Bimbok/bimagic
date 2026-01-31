@@ -104,9 +104,15 @@ fi
 if [ "$USE_SUDO" = true ]; then
     sudo cp "$SOURCE_PATH" "$TARGET_DIR/bimagic"
     sudo chmod +x "$TARGET_DIR/bimagic"
+    # Create the 'wz' alias (symlink)
+    echo "🔗 Creating 'wz' alias..."
+    sudo ln -sf "$TARGET_DIR/bimagic" "$TARGET_DIR/wz"
 else
     cp "$SOURCE_PATH" "$TARGET_DIR/bimagic"
     chmod +x "$TARGET_DIR/bimagic"
+    # Create the 'wz' alias (symlink)
+    echo "🔗 Creating 'wz' alias..."
+    ln -sf "$TARGET_DIR/bimagic" "$TARGET_DIR/wz"
 fi
 
 # Clean up if we cloned
@@ -115,6 +121,7 @@ if [ "$IS_LOCAL" = false ]; then
 fi
 
 echo "Successfully installed bimagic to $TARGET_DIR!"
+echo "You can now use 'bimagic' or the short alias 'wz' to run the wizard."
 echo "Please ensure GITHUB_USER and GITHUB_TOKEN are set as environment variables."
 
 # Check if target directory is in PATH

@@ -177,6 +177,11 @@ Simply run the `bimagic` command in your terminal:
 bimagic
 ```
 
+**Pro Tip:** You can also use the short alias `wz` (Wizard) for even faster access!
+```bash
+wz
+```
+
 ### Command Line Flags
 
 You can also use flags to perform specific actions immediately:

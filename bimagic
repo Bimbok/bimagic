@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="v1.2.0"
+VERSION="v1.2.1"
 
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
   echo "Bimagic Git Wizard $VERSION"
@@ -570,8 +570,8 @@ if [[ "$CLI_MODE" == "lazy" ]]; then
     exit 1
   fi
 
-  print_status "🧙 Lazy Wizard invoked!"
-  
+  print_status "  Lazy Wizard invoked!"
+
   # 1. Add all changes
   if gum spin --title "Adding files..." -- git add .; then
     print_status "Files added."
@@ -591,17 +591,17 @@ if [[ "$CLI_MODE" == "lazy" ]]; then
   # 3. Push
   branch=$(get_current_branch)
   print_status "Pushing to $branch..."
-  
+
   if gum spin --title "Pushing..." -- git push; then
-    print_status "✨ Magic complete!"
+    print_status "󱝂 Magic complete!"
   else
     # Try setting upstream if standard push failed
     print_warning "Standard push failed. Trying to set upstream..."
     if gum spin --title "Pushing (upstream)..." -- git push -u origin "$branch"; then
-       print_status "✨ Magic complete (upstream set)!"
+      print_status "󱝂 Magic complete (upstream set)!"
     else
-       print_error "Push failed."
-       exit 1
+      print_error "Push failed."
+      exit 1
     fi
   fi
   exit 0
