@@ -410,6 +410,73 @@ clone_repo() {
   fi
 }
 
+# Function for Conventional Commits
+commit_wizard() {
+  echo -e "${PURPLE}=== The Alchemist's Commit ===${NC}"
+
+  # 1. Select Type
+  local type=$(gum choose --header "Select change type:" \
+    "feat: A new feature" \
+    "fix: A bug fix" \
+    "docs: Documentation only changes" \
+    "style: Changes that do not affect the meaning of the code" \
+    "refactor: A code change that neither fixes a bug nor adds a feature" \
+    "perf: A code change that improves performance" \
+    "test: Adding missing tests or correcting existing tests" \
+    "chore: Changes to the build process or auxiliary tools")
+
+  # Extract just the type (e.g., "feat") from the selection
+  type=$(echo "$type" | cut -d: -f1)
+  [[ -z "$type" ]] && return 1
+
+  # 2. Scope (Optional)
+  local scope=$(gum input --placeholder "Scope (optional, e.g., 'login', 'ui'). Press Enter to skip.")
+
+  # 3. Short Description
+  local summary=$(gum input --placeholder "Short description (imperative mood, e.g., 'add generic login')")
+  [[ -z "$summary" ]] && print_warning "Summary is required!" && return 1
+
+  # 4. Long Description (Optional)
+  local body=""
+  if gum confirm "Add a longer description (body)?"; then
+    body=$(gum write --placeholder "Enter detailed description...")
+  fi
+
+  # 5. Breaking Change?
+  local breaking=""
+  if gum confirm "Is this a BREAKING CHANGE?"; then
+    breaking="!"
+  fi
+
+  # Construct the message
+  local commit_msg=""
+  if [[ -n "$scope" ]]; then
+    commit_msg="${type}(${scope})${breaking}: ${summary}"
+  else
+    commit_msg="${type}${breaking}: ${summary}"
+  fi
+
+  # Append body if exists
+  if [[ -n "$body" ]]; then
+    commit_msg="${commit_msg}
+
+${body}"
+  fi
+
+  # Preview and Confirm
+  echo
+  gum style --border rounded --border-foreground 212 --padding "1 2" \
+    "PREVIEW:" "$commit_msg"
+  echo
+
+  if gum confirm "Commit with this message?"; then
+    git commit -m "$commit_msg"
+    print_status "✨ Mischief managed! (Commit successful)"
+  else
+    print_warning "Commit cancelled."
+  fi
+}
+
 #function to display git graph
 pretty_git_log() {
   git log --graph \
@@ -648,17 +715,23 @@ while true; do
     fi
     ;;
   " Commit changes")
-    msg=$(gum input --placeholder "Enter commit message")
-    if [[ -z "$msg" ]]; then
-      print_warning "No commit message provided. Cancelled."
-      continue
-    fi
+    commit_mode=$(gum choose "🧙 Magic Commit (Builder)" "⚡ Quick Commit (One-line)")
 
-    if gum confirm "Commit changes?"; then
-      git commit -m "$msg"
-      print_status "Commit done!"
+    if [[ "$commit_mode" == "🧙 Magic Commit (Builder)" ]]; then
+      commit_wizard
     else
-      print_status "Commit cancelled."
+      msg=$(gum input --placeholder "Enter commit message")
+      if [[ -z "$msg" ]]; then
+        print_warning "No commit message provided. Cancelled."
+        continue
+      fi
+
+      if gum confirm "Commit changes?"; then
+        git commit -m "$msg"
+        print_status "Commit done!"
+      else
+        print_status "Commit cancelled."
+      fi
     fi
     ;;
   " Push to remote")
