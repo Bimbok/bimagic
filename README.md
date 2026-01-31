@@ -222,7 +222,7 @@ At the top of the interface, a status box summarizes:
 1. **Clone repository** - Clone a repository from a URL (supports standard and interactive modes)
 2. **Init new repo** - Initialize a new Git repository (auto-renames master → main)
 3. **Add files** - Stage files (interactive multi-select; includes [ALL])
-4. **Commit changes** - Commit staged changes with a message
+4. **Commit changes** - Commit staged changes with a choice between Magic Commit (Conventional Builder) or Quick Commit (One-line)
 5. **Push to remote** - Push changes (handles multiple remotes and auto-configuration)
 6. **Pull latest changes** - Fetch and merge changes from remote
 7. **Create/switch branch** - Create a new branch or switch to an existing one
@@ -251,6 +251,21 @@ If you only need specific files or folders from a large repository, this mode al
 3. Download only the selected items into your local directory.
 
 Usage from CLI: `bimagic -d -i "repo-url"`
+
+### Commit changes (Option 4)
+
+Bimagic offers two ways to commit your staged changes:
+
+#### 󰦥 Magic Commit (Builder)
+The "Commit Spell" - a guided experience that helps you follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. It prompts you for:
+1. **Type**: feat, fix, docs, style, refactor, perf, test, chore.
+2. **Scope**: The area of the code being changed (optional).
+3. **Description**: A short, imperative-mood summary.
+4. **Body**: Detailed description (optional).
+5. **Breaking Changes**: Automatically adds `!` to the type/scope for visibility.
+
+#### 󱐋 Quick Commit (One-line)
+For when you just want to provide a quick message and move on.
 
 ### Contributor Statistics (Option 10)
 
